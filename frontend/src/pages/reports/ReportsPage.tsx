@@ -34,38 +34,40 @@ export default function ReportsPage() {
         <p className="text-sm text-gray-500">Business insights and analytics</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id as ReportTab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === id
-                ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-            }`}
-          >
-            <Icon size={15} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Date range (not for stock, creditors, debtors, vehicles, wages, salaries) */}
-      {tab !== 'stock' && tab !== 'creditors' && tab !== 'debtors' && tab !== 'vehiclexpenses' && tab !== 'dailywages' && tab !== 'monthlysalaries' && (
-        <div className="card p-4 flex flex-col gap-2 w-fit">
-          <label className="label">Date Range</label>
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onChange={(range) => {
-              setFromDate(range.from)
-              setToDate(range.to)
-            }}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id as ReportTab)}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                tab === id
+                  ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
         </div>
-      )}
+
+        {/* Date range (not for creditors, debtors) */}
+        {tab !== 'creditors' && tab !== 'debtors' && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Date Filter:</span>
+            <DateRangePicker
+              fromDate={fromDate}
+              toDate={toDate}
+              onChange={(range) => {
+                setFromDate(range.from)
+                setToDate(range.to)
+              }}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Report panels */}
       {tab === 'sales' && <SalesReport from={fromDate} to={toDate} />}
@@ -73,9 +75,9 @@ export default function ReportsPage() {
       {tab === 'stock' && <StockReport />}
       {tab === 'creditors' && <CreditorsReport />}
       {tab === 'debtors' && <DebtorsReport />}
-      {tab === 'vehiclexpenses' && <VehicleExpensesReport />}
-      {tab === 'dailywages' && <DailyWagesReport />}
-      {tab === 'monthlysalaries' && <MonthlySalariesReport />}
+      {tab === 'vehiclexpenses' && <VehicleExpensesReport from={fromDate} to={toDate} />}
+      {tab === 'dailywages' && <DailyWagesReport from={fromDate} to={toDate} />}
+      {tab === 'monthlysalaries' && <MonthlySalariesReport from={fromDate} to={toDate} />}
       {tab === 'profit' && <ProfitLossReport from={fromDate} to={toDate} />}
     </div>
   )
@@ -466,10 +468,10 @@ function DebtorsReport() {
 
 // ── Vehicle Expenses Report ───────────────────────────────────────────────
 
-function VehicleExpensesReport() {
+function VehicleExpensesReport({ from, to }: { from: string; to: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['report-vehicle-expenses'],
-    queryFn: () => reportService.vehicleExpenses(),
+    queryKey: ['report-vehicle-expenses', from, to],
+    queryFn: () => reportService.vehicleExpenses(from, to),
   })
   const [search, setSearch] = useState('')
 
@@ -565,10 +567,10 @@ function VehicleExpensesReport() {
 
 // ── Daily Wages Report ─────────────────────────────────────────────────────
 
-function DailyWagesReport() {
+function DailyWagesReport({ from, to }: { from: string; to: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['report-daily-wages'],
-    queryFn: () => reportService.dailyWages(),
+    queryKey: ['report-daily-wages', from, to],
+    queryFn: () => reportService.dailyWages(from, to),
   })
   const [search, setSearch] = useState('')
 
@@ -649,10 +651,10 @@ function DailyWagesReport() {
 
 // ── Monthly Salaries Report ────────────────────────────────────────────────
 
-function MonthlySalariesReport() {
+function MonthlySalariesReport({ from, to }: { from: string; to: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['report-monthly-salaries'],
-    queryFn: () => reportService.monthlySalaries(),
+    queryKey: ['report-monthly-salaries', from, to],
+    queryFn: () => reportService.monthlySalaries(from, to),
   })
   const [search, setSearch] = useState('')
 

@@ -22,8 +22,8 @@ function StaffForm({ onSubmit, loading, initial }: {
   loading: boolean
   initial?: Staff | null
 }) {
-  const { control, register, handleSubmit, formState: { errors } } = useForm<Partial<Staff>>({
-    defaultValues: initial ?? { is_active: true, salary_type: 'daily' }
+  const { register, handleSubmit, formState: { errors } } = useForm<Partial<Staff>>({
+    defaultValues: initial ?? { is_active: true, salary_type: 'daily', base_salary: 0 }
   })
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -33,38 +33,15 @@ function StaffForm({ onSubmit, loading, initial }: {
           <input className="input" placeholder="e.g. Rajesh Kumar" {...register('name', { required: 'Name is required' })} />
           {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="label">Mobile Number *</label>
           <input className="input" type="tel" placeholder="e.g. 9876543210" {...register('mobile', { required: 'Mobile is required' })} />
           {errors.mobile && <p className="text-xs text-red-500 mt-1">{errors.mobile.message}</p>}
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="label">Designation / Role *</label>
           <input className="input" placeholder="e.g. Driver, Helper, Billing Staff" {...register('role', { required: 'Role is required' })} />
           {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role.message}</p>}
-        </div>
-        <div>
-          <label className="label">Payment Basis *</label>
-          <Controller
-            control={control}
-            name="salary_type"
-            render={({ field }) => (
-              <Combobox
-                placeholder="Select basis"
-                options={[
-                  { value: 'daily', label: 'Daily Wages' },
-                  { value: 'monthly', label: 'Monthly Salary' }
-                ]}
-                value={field.value}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        </div>
-        <div>
-          <label className="label">Base Rate / Salary (₹) *</label>
-          <input className="input" type="number" step="1" {...register('base_salary', { required: 'Salary is required', min: { value: 1, message: 'Must be greater than 0' } })} />
-          {errors.base_salary && <p className="text-xs text-red-500 mt-1">{errors.base_salary.message}</p>}
         </div>
         <div className="col-span-2 flex items-center gap-2 pt-2">
           <input type="checkbox" id="is_active_staff" className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" {...register('is_active')} />
@@ -99,14 +76,9 @@ function SalaryPayoutForm({ onSubmit, loading, initial, staffList }: {
   const handleStaffChange = (sId: number) => {
     const emp = staffList.find(s => s.id === sId)
     if (emp) {
-      setValue('amount', emp.base_salary)
-      setValue('payment_type', emp.salary_type)
-      if (emp.salary_type === 'daily') {
-        setValue('payment_period', new Date().toISOString().split('T')[0])
-      } else {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        setValue('payment_period', `${months[new Date().getMonth()]} ${new Date().getFullYear()}`)
-      }
+      setValue('payment_type', 'daily')
+      setValue('payment_period', new Date().toISOString().split('T')[0])
+      setValue('amount', 0)
     }
   }
 
@@ -128,7 +100,7 @@ function SalaryPayoutForm({ onSubmit, loading, initial, staffList }: {
                 emptyMessage="No staff member found."
                 options={staffList.filter(s => s.is_active).map(s => ({
                   value: s.id,
-                  label: `${s.name} — ${s.role} (${s.salary_type})`
+                  label: `${s.name} — ${s.role}`
                 }))}
                 value={field.value}
                 onChange={(val) => {
@@ -157,8 +129,32 @@ function SalaryPayoutForm({ onSubmit, loading, initial, staffList }: {
           {errors.payment_date && <p className="text-xs text-red-500 mt-1">{errors.payment_date.message}</p>}
         </div>
         <div>
-          <label className="label">Payout Category</label>
-          <input className="input bg-gray-50 dark:bg-gray-800 cursor-not-allowed capitalize" {...register('payment_type')} readOnly />
+          <label className="label">Payout Category *</label>
+          <Controller
+            control={control}
+            name="payment_type"
+            rules={{ required: 'Category is required' }}
+            render={({ field }) => (
+              <Combobox
+                placeholder="Choose type"
+                options={[
+                  { value: 'daily', label: 'Daily Wages' },
+                  { value: 'monthly', label: 'Monthly Salary' }
+                ]}
+                value={field.value}
+                onChange={(val) => {
+                  field.onChange(val)
+                  if (val === 'daily') {
+                    setValue('payment_period', new Date().toISOString().split('T')[0])
+                  } else {
+                    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                    setValue('payment_period', `${months[new Date().getMonth()]} ${new Date().getFullYear()}`)
+                  }
+                }}
+              />
+            )}
+          />
+          {errors.payment_type && <p className="text-xs text-red-500 mt-1">{errors.payment_type.message}</p>}
         </div>
         <div>
           <label className="label">Payout Period *</label>
@@ -336,28 +332,17 @@ export default function StaffManagementPage() {
                     <th>Name</th>
                     <th>Mobile</th>
                     <th>Designation</th>
-                    <th>Salary Basis</th>
-                    <th>Base Salary Rate</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {staffQuery.isLoading ? <TableSkeleton cols={8} /> : staffQuery.data?.items.map((s, i) => (
+                  {staffQuery.isLoading ? <TableSkeleton cols={6} /> : staffQuery.data?.items.map((s, i) => (
                     <tr key={s.id}>
                       <td className="text-gray-400">{(sPage - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="font-semibold dark:text-white">{s.name}</td>
                       <td>{s.mobile}</td>
                       <td>{s.role}</td>
-                      <td className="capitalize">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.salary_type === 'daily' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400'}`}>
-                          {s.salary_type}
-                        </span>
-                      </td>
-                      <td className="font-medium">
-                        {fmtCurrency(s.base_salary)}
-                        <span className="text-xs text-gray-500 font-normal"> / {s.salary_type === 'daily' ? 'day' : 'month'}</span>
-                      </td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.is_active ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
                           {s.is_active ? 'Active' : 'Inactive'}
@@ -372,7 +357,7 @@ export default function StaffManagementPage() {
                     </tr>
                   ))}
                   {!staffQuery.isLoading && !staffQuery.data?.items.length && (
-                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No staff members registered</td></tr>
+                    <tr><td colSpan={6} className="text-center py-12 text-gray-400">No staff members registered</td></tr>
                   )}
                 </tbody>
               </table>

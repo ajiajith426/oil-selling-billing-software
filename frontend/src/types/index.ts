@@ -69,6 +69,9 @@ export interface Customer {
   state?: string
   pincode?: string
   created_at: string
+  total_sales?: number
+  total_paid?: number
+  total_due?: number
 }
 
 // ── Supplier ──────────────────────────────────────────────────────────────
