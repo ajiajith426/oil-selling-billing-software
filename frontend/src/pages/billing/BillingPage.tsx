@@ -9,6 +9,7 @@ import { saleService } from '@/services/sale.service'
 import { Product, Sale } from '@/types'
 import { fmtCurrency } from '@/utils/format'
 import InvoicePrint from './InvoicePrint'
+import { Combobox } from '@/components/ui/Combobox'
 
 interface CartItem {
   product: Product
@@ -18,7 +19,7 @@ interface CartItem {
   discount_percent: number
 }
 
-type PaymentMethod = 'cash' | 'card' | 'upi' | 'split'
+type PaymentMethod = 'cash' | 'credit' | 'upi' | 'split'
 
 export default function BillingPage() {
   const qc = useQueryClient()
@@ -31,10 +32,10 @@ export default function BillingPage() {
   const [discountAmount, setDiscountAmount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [cashAmount, setCashAmount] = useState(0)
-  const [cardAmount, setCardAmount] = useState(0)
   const [upiAmount, setUpiAmount] = useState(0)
   const [notes, setNotes] = useState('')
   const [completedSale, setCompletedSale] = useState<Sale | null>(null)
+  const [gstEnabled, setGstEnabled] = useState(true)
 
   const { data: productsData } = useQuery({
     queryKey: ['pos-products', search],
@@ -99,13 +100,15 @@ export default function BillingPage() {
     const base = item.unit_price * item.quantity
     return sum + base - (base * item.discount_percent / 100)
   }, 0)
-  const taxAmount = cart.reduce((sum, item) => {
-    const base = item.unit_price * item.quantity
-    const disc = base * item.discount_percent / 100
-    return sum + ((base - disc) * item.gst_percent / 100)
-  }, 0)
+  const taxAmount = gstEnabled
+    ? cart.reduce((sum, item) => {
+      const base = item.unit_price * item.quantity
+      const disc = base * item.discount_percent / 100
+      return sum + ((base - disc) * item.gst_percent / 100)
+    }, 0)
+    : 0
   const grandTotal = subtotal + taxAmount - discountAmount
-  const paidAmount = paymentMethod === 'split' ? cashAmount + cardAmount + upiAmount : cashAmount || cardAmount || upiAmount
+  const paidAmount = paymentMethod === 'split' ? cashAmount + upiAmount : cashAmount || upiAmount
   const changeAmount = Math.max(0, (paymentMethod === 'cash' ? cashAmount : paidAmount) - grandTotal)
 
   const clearBill = () => {
@@ -113,7 +116,6 @@ export default function BillingPage() {
     setCompletedSale(null)
     setDiscountAmount(0)
     setCashAmount(0)
-    setCardAmount(0)
     setUpiAmount(0)
     setCustomerId(undefined)
     setNotes('')
@@ -122,23 +124,39 @@ export default function BillingPage() {
 
   const handleCheckout = () => {
     if (!cart.length) { toast.error('Cart is empty'); return }
+    if (paymentMethod === 'credit' && !customerId) {
+      toast.error('Customer selection is required for Credit sales')
+      return
+    }
+    if ((paymentMethod === 'split' || paymentMethod === 'credit') && (cashAmount + upiAmount) > grandTotal) {
+      toast.error('Total paid amount cannot exceed Grand Total')
+      return
+    }
+
     const payMap = {
       cash: { cash_amount: grandTotal, card_amount: 0, upi_amount: 0 },
-      card: { cash_amount: 0, card_amount: grandTotal, upi_amount: 0 },
+      credit: { cash_amount: cashAmount, card_amount: 0, upi_amount: upiAmount },
       upi: { cash_amount: 0, card_amount: 0, upi_amount: grandTotal },
-      split: { cash_amount: cashAmount, card_amount: cardAmount, upi_amount: upiAmount },
+      split: { cash_amount: cashAmount, card_amount: 0, upi_amount: upiAmount },
     }
+
+    let paidAmt = 0
+    if (paymentMethod === 'cash') paidAmt = grandTotal
+    else if (paymentMethod === 'upi') paidAmt = grandTotal
+    else if (paymentMethod === 'split') paidAmt = cashAmount + upiAmount
+    else if (paymentMethod === 'credit') paidAmt = cashAmount + upiAmount
+
     createSale.mutate({
       customer_id: customerId,
       discount_amount: discountAmount,
-      paid_amount: paymentMethod === 'cash' ? cashAmount : paidAmount,
+      paid_amount: paidAmt,
       payment_method: paymentMethod,
       notes,
       items: cart.map((c) => ({
         product_id: c.product.id,
         quantity: c.quantity,
         unit_price: c.unit_price,
-        gst_percent: c.gst_percent,
+        gst_percent: gstEnabled ? c.gst_percent : 0,
         discount_percent: c.discount_percent,
       })),
       ...payMap[paymentMethod],
@@ -147,11 +165,30 @@ export default function BillingPage() {
 
   return (
     <div className="h-full">
-      <div className="grid lg:grid-cols-5 gap-4 h-full">
+      <div className="grid lg:grid-cols-4 gap-4 h-full">
         {/* Left: product search + cart */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold dark:text-white">POS / Billing</h1>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-xl font-bold dark:text-white">POS / Billing</h1>
+
+              {/* GST Toggle Switch */}
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={gstEnabled}
+                  onChange={(e) => setGstEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ml-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  GST Billing:
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider ${gstEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                    {gstEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </span>
+              </label>
+            </div>
             {completedSale && (
               <div className="flex gap-2">
                 <button className="btn-outline" onClick={handlePrint}><Printer size={16} /> Print Invoice</button>
@@ -207,7 +244,7 @@ export default function BillingPage() {
                   {cart.map((item, idx) => {
                     const base = item.unit_price * item.quantity
                     const disc = base * item.discount_percent / 100
-                    const gst = (base - disc) * item.gst_percent / 100
+                    const gst = gstEnabled ? ((base - disc) * item.gst_percent / 100) : 0
                     return (
                       <tr key={idx}>
                         <td>
@@ -232,7 +269,7 @@ export default function BillingPage() {
                             value={item.unit_price}
                             onChange={(e) => setCart(cart.map((c, i) => i === idx ? { ...c, unit_price: parseFloat(e.target.value) || 0 } : c))} />
                         </td>
-                        <td className="text-gray-500 text-sm">{item.gst_percent}%</td>
+                        <td className="text-gray-500 text-sm">{gstEnabled ? `${item.gst_percent}%` : '0%'}</td>
                         <td>
                           <input type="number" step="0.01" className="input w-16"
                             value={item.discount_percent}
@@ -263,16 +300,26 @@ export default function BillingPage() {
         </div>
 
         {/* Right: checkout panel */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-1 space-y-4">
           <div className="card p-5 space-y-4">
             <h2 className="font-semibold dark:text-white">Customer & Payment</h2>
 
             <div>
               <label className="label">Customer</label>
-              <select className="input" value={customerId ?? ''} onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : undefined)}>
-                <option value="">Walk-in Customer</option>
-                {customers?.items.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.mobile}</option>)}
-              </select>
+              <Combobox
+                placeholder="Walk-in Customer"
+                searchPlaceholder="Search customer..."
+                emptyMessage="No customer found."
+                options={[
+                  { value: 'walk-in', label: 'Walk-in Customer' },
+                  ...(customers?.items || []).map((c) => ({
+                    value: c.id,
+                    label: `${c.name} — ${c.mobile || ''}`
+                  }))
+                ]}
+                value={customerId ?? 'walk-in'}
+                onChange={(val) => setCustomerId(val === 'walk-in' ? undefined : val)}
+              />
             </div>
 
             {/* Totals */}
@@ -299,15 +346,15 @@ export default function BillingPage() {
             {/* Payment method */}
             <div>
               <label className="label">Payment Method</label>
-              <div className="grid grid-cols-4 gap-2">
-                {(['cash', 'card', 'upi', 'split'] as PaymentMethod[]).map((m) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(['cash', 'credit', 'upi', 'split'] as PaymentMethod[]).map((m) => (
                   <button key={m} type="button"
                     onClick={() => setPaymentMethod(m)}
                     className={`py-2 rounded-lg text-xs font-semibold capitalize border transition-colors ${paymentMethod === m
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}>
-                    {m}
+                      }`}>
+                    {m === 'credit' ? 'Credit' : m}
                   </button>
                 ))}
               </div>
@@ -324,10 +371,29 @@ export default function BillingPage() {
                 )}
               </div>
             )}
-            {paymentMethod === 'card' && (
-              <div>
-                <label className="label">Card Amount (₹)</label>
-                <input type="number" step="0.01" className="input" value={cardAmount} onChange={(e) => setCardAmount(parseFloat(e.target.value) || 0)} />
+            {paymentMethod === 'credit' && (
+              <div className="space-y-3 animate-fadeIn">
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">This transaction will be recorded on credit. Outstanding amount will be updated for {customerId ? 'this customer' : 'selected customer'}.</p>
+                </div>
+                <div>
+                  <label className="label">Paid now in Cash (₹)</label>
+                  <input type="number" step="0.01" className="input" value={cashAmount} onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <label className="label">Paid now in UPI (₹)</label>
+                  <input type="number" step="0.01" className="input" value={upiAmount} onChange={(e) => setUpiAmount(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-semibold space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Total Paid:</span>
+                    <span className="text-green-600">{fmtCurrency(cashAmount + upiAmount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-1 dark:border-gray-700">
+                    <span className="text-gray-500">Outstanding Balance Owed:</span>
+                    <span className="text-red-500">{fmtCurrency(Math.max(0, grandTotal - (cashAmount + upiAmount)))}</span>
+                  </div>
+                </div>
               </div>
             )}
             {paymentMethod === 'upi' && (
@@ -337,10 +403,9 @@ export default function BillingPage() {
               </div>
             )}
             {paymentMethod === 'split' && (
-              <div className="space-y-2">
-                <div><label className="label">Cash</label><input type="number" step="0.01" className="input" value={cashAmount} onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)} /></div>
-                <div><label className="label">Card</label><input type="number" step="0.01" className="input" value={cardAmount} onChange={(e) => setCardAmount(parseFloat(e.target.value) || 0)} /></div>
-                <div><label className="label">UPI</label><input type="number" step="0.01" className="input" value={upiAmount} onChange={(e) => setUpiAmount(parseFloat(e.target.value) || 0)} /></div>
+              <div className="space-y-2 animate-fadeIn">
+                <div><label className="label">Cash Amount (₹)</label><input type="number" step="0.01" className="input" value={cashAmount} onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)} /></div>
+                <div><label className="label">UPI Amount (₹)</label><input type="number" step="0.01" className="input" value={upiAmount} onChange={(e) => setUpiAmount(parseFloat(e.target.value) || 0)} /></div>
               </div>
             )}
 

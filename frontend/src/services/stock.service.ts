@@ -1,9 +1,13 @@
-import api from './api'
 import { StockMovement, PaginatedResponse } from '@/types'
+import { mockDB, getPaginatedResponse } from './mockStore'
 
 export const stockService = {
-  movements: (params?: Record<string, unknown>) =>
-    api.get<PaginatedResponse<StockMovement>>('/stock/movements', { params }).then((r) => r.data),
-  adjust: (data: { product_id: number; movement_type: string; quantity: number; notes?: string }) =>
-    api.post<StockMovement>('/stock/adjust', data).then((r) => r.data),
+  movements: async (params?: Record<string, unknown>): Promise<PaginatedResponse<StockMovement>> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return getPaginatedResponse(mockDB.getStockMovements(), params);
+  },
+  adjust: async (data: { product_id: number; movement_type: string; quantity: number; notes?: string }): Promise<StockMovement> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.adjustStock(data);
+  },
 }

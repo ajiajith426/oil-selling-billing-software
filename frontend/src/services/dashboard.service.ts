@@ -1,11 +1,25 @@
-import api from './api'
-import { DashboardStats } from '@/types'
+import { DashboardStats, Sale } from '@/types'
+import { mockDB } from './mockStore'
 
 export const dashboardService = {
-  stats: () => api.get<DashboardStats>('/dashboard/stats').then((r) => r.data),
-  recentBills: (limit = 10) => api.get('/dashboard/recent-bills', { params: { limit } }).then((r) => r.data),
-  topProducts: (limit = 10) => api.get('/dashboard/top-products', { params: { limit } }).then((r) => r.data),
-  salesGraph: (days = 30) => api.get('/dashboard/sales-graph', { params: { days } }).then((r) => r.data),
-  monthlyRevenue: (year?: number) =>
-    api.get('/dashboard/monthly-revenue', { params: year ? { year } : {} }).then((r) => r.data),
+  stats: async (): Promise<DashboardStats> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return mockDB.getDashboardStats();
+  },
+  recentBills: async (limit = 10): Promise<any[]> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return mockDB.getSales().slice(0, limit);
+  },
+  topProducts: async (limit = 10): Promise<any[]> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return mockDB.getTopProducts(limit);
+  },
+  salesGraph: async (days = 30): Promise<any[]> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return mockDB.getSalesGraph(days);
+  },
+  monthlyRevenue: async (year?: number): Promise<any[]> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return mockDB.getMonthlyRevenue(year);
+  },
 }

@@ -69,6 +69,9 @@ export interface Customer {
   state?: string
   pincode?: string
   created_at: string
+  total_sales?: number
+  total_paid?: number
+  total_due?: number
 }
 
 // ── Supplier ──────────────────────────────────────────────────────────────
@@ -143,7 +146,7 @@ export interface Sale {
   grand_total: number
   paid_amount: number
   change_amount: number
-  payment_method: 'cash' | 'card' | 'upi' | 'split'
+  payment_method: 'cash' | 'card' | 'upi' | 'split' | 'credit'
   cash_amount: number
   card_amount: number
   upi_amount: number
@@ -203,4 +206,53 @@ export interface DashboardStats {
   total_customers: number
   total_suppliers: number
   low_stock_count: number
+}
+
+// ── Vehicle ────────────────────────────────────────────────────────────────
+export interface Vehicle {
+  id: number
+  vehicle_no: string
+  model: string
+  type: string
+  driver_id?: number
+  driver_name?: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface VehicleExpense {
+  id: number
+  vehicle_id: number
+  vehicle_no: string
+  expense_type: 'fuel' | 'maintenance' | 'insurance' | 'permit' | 'other'
+  amount: number
+  expense_date: string
+  liters?: number
+  bill_no?: string
+  notes?: string
+  created_at: string
+}
+
+// ── Staff & Payroll ─────────────────────────────────────────────────────────
+export interface Staff {
+  id: number
+  name: string
+  mobile: string
+  role: string
+  salary_type: 'daily' | 'monthly'
+  base_salary: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface SalaryPayment {
+  id: number
+  staff_id: number
+  staff_name: string
+  payment_type: 'daily' | 'monthly'
+  payment_date: string
+  amount: number
+  payment_period: string
+  notes?: string
+  created_at: string
 }

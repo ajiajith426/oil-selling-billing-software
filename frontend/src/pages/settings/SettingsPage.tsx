@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Upload, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Combobox } from '@/components/ui/Combobox'
 import { settingsService } from '@/services/settings.service'
 import { Settings } from '@/types'
 
@@ -15,7 +16,7 @@ export default function SettingsPage() {
     queryFn: settingsService.get,
   })
 
-  const { register, handleSubmit, reset, formState: { isDirty } } = useForm<Partial<Settings>>()
+  const { control, register, handleSubmit, reset, formState: { isDirty } } = useForm<Partial<Settings>>()
 
   useEffect(() => {
     if (settings) {
@@ -151,10 +152,21 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="label">Tax Mode</label>
-              <select className="input" {...register('tax_inclusive')}>
-                <option value="exclusive">Exclusive (Tax added on top)</option>
-                <option value="inclusive">Inclusive (Tax included in price)</option>
-              </select>
+              <Controller
+                control={control}
+                name="tax_inclusive"
+                render={({ field }) => (
+                  <Combobox
+                    placeholder="Select Tax Mode"
+                    options={[
+                      { value: 'exclusive', label: 'Exclusive (Tax added on top)' },
+                      { value: 'inclusive', label: 'Inclusive (Tax included in price)' }
+                    ]}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
             </div>
           </div>
         </div>

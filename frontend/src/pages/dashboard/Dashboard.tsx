@@ -1,28 +1,29 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend,
-} from 'recharts'
-import {
   DollarSign, ShoppingBag, Users, Truck, Tag, AlertTriangle, TrendingUp, Receipt,
 } from 'lucide-react'
 import { dashboardService } from '@/services/dashboard.service'
+import { reportService } from '@/services/report.service'
+import { customerService } from '@/services/customer.service'
 import StatCard from '@/components/ui/StatCard'
 import { SkeletonCard } from '@/components/ui/LoadingSkeleton'
-import { fmtCurrency, fmtDate } from '@/utils/format'
+import { fmtCurrency } from '@/utils/format'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Dashboard() {
+  const { user } = useAuth()
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: dashboardService.stats,
   })
-  const { data: salesGraph } = useQuery({
-    queryKey: ['sales-graph'],
-    queryFn: () => dashboardService.salesGraph(30),
+  const { data: stockReport } = useQuery({
+    queryKey: ['dashboard-low-stock'],
+    queryFn: () => reportService.stock(),
   })
-  const { data: monthlyRevenue } = useQuery({
-    queryKey: ['monthly-revenue'],
-    queryFn: () => dashboardService.monthlyRevenue(),
+  const { data: customersData } = useQuery({
+    queryKey: ['dashboard-top-customers'],
+    queryFn: () => customerService.list({ limit: 100 }),
   })
   const { data: recentBills } = useQuery({
     queryKey: ['recent-bills'],
@@ -33,13 +34,25 @@ export default function Dashboard() {
     queryFn: () => dashboardService.topProducts(8),
   })
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const lowStockItems = stockReport?.low_stock_items || []
+  const topCustomers = [...(customersData?.items || [])]
+    .sort((a, b) => (b.total_sales ?? 0) - (a.total_sales ?? 0))
+    .slice(0, 8)
+
+  const getGreeting = () => {
+    const hr = new Date().getHours()
+    if (hr < 12) return 'Good morning'
+    if (hr < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold dark:text-white">Dashboard</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Welcome back! Here's what's happening.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          {getGreeting()}, {user?.name || 'Admin'}! Here's what's happening.
+        </p>
       </div>
 
       {/* Stats grid */}
@@ -59,45 +72,78 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Charts row */}
+      {/* List row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Sales trend */}
-        <div className="card p-5">
-          <h2 className="text-base font-semibold mb-4 dark:text-white">Sales (Last 30 Days)</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={salesGraph ?? []}>
-              <defs>
-                <linearGradient id="sales-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => fmtCurrency(v)} />
-              <Area type="monotone" dataKey="total" stroke="#3b82f6" fill="url(#sales-grad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* Low Stock Alerts */}
+        <div className="card">
+          <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-base font-semibold dark:text-white flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-500 animate-pulse" /> Low Stock Alerts
+            </h2>
+          </div>
+          <div className="table-container border-0 rounded-none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Current Stock</th>
+                  <th>Min Stock</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lowStockItems.slice(0, 8).map((p: any) => (
+                  <tr key={p.id}>
+                    <td className="font-semibold dark:text-gray-200">{p.name}</td>
+                    <td className="text-red-600 dark:text-red-400 font-bold">{p.current_stock} {p.unit}</td>
+                    <td className="text-gray-500">{p.minimum_stock} {p.unit}</td>
+                    <td>
+                      <span className="badge-red text-[10px] font-bold">Reorder</span>
+                    </td>
+                  </tr>
+                ))}
+                {!lowStockItems.length && (
+                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">All products in good stock</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Monthly revenue */}
-        <div className="card p-5">
-          <h2 className="text-base font-semibold mb-4 dark:text-white">Monthly Revenue</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={(monthlyRevenue ?? []).map((r: { month: number; revenue: number; tax: number }) => ({
-              ...r,
-              name: months[r.month - 1],
-            }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => fmtCurrency(v)} />
-              <Legend />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Revenue" />
-              <Bar dataKey="tax" fill="#10b981" radius={[4, 4, 0, 0]} name="Tax" />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* Top Customers & Credit Dues */}
+        <div className="card">
+          <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-base font-semibold dark:text-white flex items-center gap-2">
+              <Users size={16} className="text-blue-500" /> Top Customers Ledger
+            </h2>
+          </div>
+          <div className="table-container border-0 rounded-none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Total Purchases</th>
+                  <th>Paid Amount</th>
+                  <th>Balance Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCustomers.map((c: any) => (
+                  <tr key={c.id}>
+                    <td className="font-semibold dark:text-gray-200">{c.name}</td>
+                    <td className="font-semibold">{fmtCurrency(c.total_sales ?? 0)}</td>
+                    <td className="text-emerald-600 dark:text-emerald-400 font-semibold">{fmtCurrency(c.total_paid ?? 0)}</td>
+                    <td className={`font-semibold ${c.total_due > 0 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+                      {fmtCurrency(c.total_due ?? 0)}
+                    </td>
+                  </tr>
+                ))}
+                {!topCustomers.length && (
+                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">No customer data</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -168,7 +214,7 @@ export default function Dashboard() {
                   </tr>
                 ))}
                 {!topProducts?.length && (
-                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">No data yet</td></tr>
+                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">No sales data yet</td></tr>
                 )}
               </tbody>
             </table>
