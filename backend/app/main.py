@@ -7,11 +7,12 @@ import os
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.database.session import engine, Base
+import app.models  # noqa: F401 — must be imported so all ORM classes register with Base
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create all tables on startup (deferred so import doesn't crash)
+    # Create all tables on startup — models are imported above so Base.metadata is fully populated
     Base.metadata.create_all(bind=engine)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     yield
