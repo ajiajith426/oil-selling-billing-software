@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Tag, Layers, Package, Users, Truck,
+  LayoutDashboard, Tag, Package, Users, Truck,
   ShoppingCart, Receipt, BarChart2, Settings, ChevronRight,
   Boxes, TrendingUp, X, Droplet,
 } from 'lucide-react'
@@ -9,7 +9,6 @@ import { useAuth } from '@/context/AuthContext'
 const nav = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
   { label: 'Categories', icon: Tag, to: '/categories' },
-  { label: 'Sub Categories', icon: Layers, to: '/subcategories' },
   { label: 'Products', icon: Package, to: '/products' },
   { label: 'Customers', icon: Users, to: '/customers' },
   { label: 'Suppliers', icon: Truck, to: '/suppliers' },
