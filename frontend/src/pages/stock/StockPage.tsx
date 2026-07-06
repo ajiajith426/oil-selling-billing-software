@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Combobox } from '@/components/ui/Combobox'
 import { stockService } from '@/services/stock.service'
 import { productService } from '@/services/product.service'
 import { StockMovement } from '@/types'
@@ -39,7 +40,7 @@ export default function StockPage() {
   })
   const products = productsData?.items ?? []
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<{
+  const { control, register, handleSubmit, reset, formState: { errors } } = useForm<{
     product_id: number; movement_type: string; quantity: number; notes: string
   }>()
 
@@ -103,21 +104,45 @@ export default function StockPage() {
         <form onSubmit={handleSubmit((d) => adjust.mutate({ ...d, product_id: Number(d.product_id), quantity: Number(d.quantity) }))} className="space-y-4">
           <div>
             <label className="label">Product *</label>
-            <select className="input" {...register('product_id', { required: 'Product is required' })}>
-              <option value="">Select product</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} (Stock: {p.current_stock} {p.unit})</option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="product_id"
+              rules={{ required: 'Product is required' }}
+              render={({ field }) => (
+                <Combobox
+                  placeholder="Select product"
+                  searchPlaceholder="Search product..."
+                  emptyMessage="No product found."
+                  options={products.map((p) => ({
+                    value: p.id,
+                    label: `${p.name} (Stock: ${p.current_stock} ${p.unit})`
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
             {errors.product_id && <p className="text-xs text-red-500 mt-1">{errors.product_id.message}</p>}
           </div>
           <div>
             <label className="label">Movement Type *</label>
-            <select className="input" {...register('movement_type', { required: true })}>
-              <option value="stock_in">Stock In</option>
-              <option value="stock_out">Stock Out</option>
-              <option value="adjustment">Adjustment (Add)</option>
-            </select>
+            <Controller
+              control={control}
+              name="movement_type"
+              rules={{ required: 'Movement type is required' }}
+              render={({ field }) => (
+                <Combobox
+                  placeholder="Select type"
+                  options={[
+                    { value: 'stock_in', label: 'Stock In' },
+                    { value: 'stock_out', label: 'Stock Out' },
+                    { value: 'adjustment', label: 'Adjustment (Add)' }
+                  ]}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </div>
           <div>
             <label className="label">Quantity *</label>

@@ -15,6 +15,8 @@ import SalesPage from '@/pages/billing/SalesPage'
 import StockPage from '@/pages/stock/StockPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
+import VehicleManagementPage from '@/pages/vehicles/VehicleManagementPage'
+import StaffManagementPage from '@/pages/staff/StaffManagementPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -49,6 +51,8 @@ export default function AppRoutes() {
         <Route path="billing" element={<BillingPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="stock" element={<StockPage />} />
+        <Route path="vehicles" element={<VehicleManagementPage />} />
+        <Route path="staff" element={<StaffManagementPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

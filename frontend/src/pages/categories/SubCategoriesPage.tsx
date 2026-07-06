@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Combobox } from '@/components/ui/Combobox'
 import { categoryService } from '@/services/category.service'
 import { SubCategory } from '@/types'
 import Modal from '@/components/ui/Modal'
@@ -34,7 +35,7 @@ export default function SubCategoriesPage() {
   })
   const categories = categoriesData?.items ?? []
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Partial<SubCategory>>()
+  const { control, register, handleSubmit, reset, formState: { errors } } = useForm<Partial<SubCategory>>()
 
   const upsert = useMutation({
     mutationFn: (d: Partial<SubCategory>) =>
@@ -115,10 +116,21 @@ export default function SubCategoriesPage() {
         <form onSubmit={handleSubmit((d) => upsert.mutate(d))} className="space-y-4">
           <div>
             <label className="label">Category *</label>
-            <select className="input" {...register('category_id', { required: 'Category is required', valueAsNumber: true })}>
-              <option value="">Select category</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <Controller
+              control={control}
+              name="category_id"
+              rules={{ required: 'Category is required' }}
+              render={({ field }) => (
+                <Combobox
+                  placeholder="Select category"
+                  searchPlaceholder="Search category..."
+                  emptyMessage="No category found."
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  value={field.value}
+                  onChange={(val) => field.onChange(Number(val))}
+                />
+              )}
+            />
             {errors.category_id && <p className="text-xs text-red-500 mt-1">{errors.category_id.message}</p>}
           </div>
           <div>

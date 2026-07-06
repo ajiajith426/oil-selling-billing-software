@@ -17,6 +17,8 @@ const nav = [
   { label: 'Billing / POS', icon: Receipt, to: '/billing' },
   { label: 'Sales History', icon: TrendingUp, to: '/sales' },
   { label: 'Stock', icon: Boxes, to: '/stock' },
+  { label: 'Vehicle Management', icon: Truck, to: '/vehicles' },
+  { label: 'Staff Management', icon: Users, to: '/staff' },
   { label: 'Reports', icon: BarChart2, to: '/reports' },
   { label: 'Settings', icon: Settings, to: '/settings' },
 ]

@@ -21,4 +21,24 @@ export const reportService = {
     await new Promise((r) => setTimeout(r, 150));
     return mockDB.getReportsProfitLoss(from_date, to_date);
   },
+  creditors: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return (mockDB as any).getReportsCreditors();
+  },
+  debtors: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return (mockDB as any).getReportsDebtors();
+  },
+  vehicleExpenses: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return (mockDB as any).getReportsVehicleExpenses();
+  },
+  dailyWages: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return (mockDB as any).getReportsDailyWages();
+  },
+  monthlySalaries: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return (mockDB as any).getReportsMonthlySalaries();
+  },
 }

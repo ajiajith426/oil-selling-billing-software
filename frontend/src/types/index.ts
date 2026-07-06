@@ -204,3 +204,50 @@ export interface DashboardStats {
   total_suppliers: number
   low_stock_count: number
 }
+
+// ── Vehicle ────────────────────────────────────────────────────────────────
+export interface Vehicle {
+  id: number
+  vehicle_no: string
+  model: string
+  type: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface VehicleExpense {
+  id: number
+  vehicle_id: number
+  vehicle_no: string
+  expense_type: 'fuel' | 'maintenance' | 'insurance' | 'permit' | 'other'
+  amount: number
+  expense_date: string
+  liters?: number
+  bill_no?: string
+  notes?: string
+  created_at: string
+}
+
+// ── Staff & Payroll ─────────────────────────────────────────────────────────
+export interface Staff {
+  id: number
+  name: string
+  mobile: string
+  role: string
+  salary_type: 'daily' | 'monthly'
+  base_salary: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface SalaryPayment {
+  id: number
+  staff_id: number
+  staff_name: string
+  payment_type: 'daily' | 'monthly'
+  payment_date: string
+  amount: number
+  payment_period: string
+  notes?: string
+  created_at: string
+}

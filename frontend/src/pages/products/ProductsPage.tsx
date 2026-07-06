@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Plus, Pencil, Trash2, Search, Download, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Combobox } from '@/components/ui/Combobox'
 import { productService } from '@/services/product.service'
 import { categoryService } from '@/services/category.service'
 import { Product } from '@/types'
@@ -35,7 +36,7 @@ export default function ProductsPage() {
   })
   const categories = categoriesData?.items ?? []
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<Partial<Product>>()
+  const { control, register, handleSubmit, reset, watch, formState: { errors } } = useForm<Partial<Product>>()
   const selectedCat = watch('category_id')
 
   const { data: subCatData } = useQuery({
@@ -154,17 +155,44 @@ export default function ProductsPage() {
             </div>
             <div>
               <label className="label">Category</label>
-              <select className="input" {...register('category_id', { valueAsNumber: true })}>
-                <option value="">Select category</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <Controller
+                control={control}
+                name="category_id"
+                render={({ field }) => (
+                  <Combobox
+                    placeholder="Select category"
+                    searchPlaceholder="Search category..."
+                    emptyMessage="No category found."
+                    options={[
+                      { value: 'none', label: 'Select category' },
+                      ...categories.map((c) => ({ value: c.id, label: c.name }))
+                    ]}
+                    value={field.value ?? 'none'}
+                    onChange={(val) => field.onChange(val === 'none' ? undefined : Number(val))}
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="label">Sub Category</label>
-              <select className="input" {...register('subcategory_id', { valueAsNumber: true })}>
-                <option value="">Select sub category</option>
-                {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <Controller
+                control={control}
+                name="subcategory_id"
+                render={({ field }) => (
+                  <Combobox
+                    placeholder="Select sub category"
+                    searchPlaceholder="Search subcategory..."
+                    emptyMessage="No subcategory found."
+                    options={[
+                      { value: 'none', label: 'Select sub category' },
+                      ...subcategories.map((s) => ({ value: s.id, label: s.name }))
+                    ]}
+                    value={field.value ?? 'none'}
+                    onChange={(val) => field.onChange(val === 'none' ? undefined : Number(val))}
+                    disabled={!selectedCat}
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="label">SKU</label>
@@ -188,11 +216,22 @@ export default function ProductsPage() {
             </div>
             <div>
               <label className="label">Unit</label>
-              <select className="input" {...register('unit')}>
-                {['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="unit"
+                render={({ field }) => (
+                  <Combobox
+                    placeholder="Select unit"
+                    searchPlaceholder="Search unit..."
+                    options={['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => ({
+                      value: u,
+                      label: u
+                    }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
             </div>
             {!editing && (
               <div>

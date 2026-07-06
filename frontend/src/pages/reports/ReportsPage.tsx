@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart2, TrendingUp, Package, FileText, DollarSign } from 'lucide-react'
+import { BarChart2, TrendingUp, Package, FileText, DollarSign, Users, Truck } from 'lucide-react'
 import { reportService } from '@/services/report.service'
 import { fmtCurrency, today, monthStart } from '@/utils/format'
+import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
-type ReportTab = 'sales' | 'purchases' | 'stock' | 'gst' | 'profit'
+type ReportTab = 'sales' | 'purchases' | 'stock' | 'creditors' | 'debtors' | 'vehiclexpenses' | 'dailywages' | 'monthlysalaries' | 'gst' | 'profit'
 
 export default function ReportsPage() {
   const [tab, setTab] = useState<ReportTab>('sales')
@@ -16,8 +17,13 @@ export default function ReportsPage() {
 
   const tabs = [
     { id: 'sales', label: 'Sales', icon: TrendingUp },
-    { id: 'purchases', label: 'Purchases', icon: BarChart2 },
-    { id: 'stock', label: 'Stock', icon: Package },
+    { id: 'purchases', label: 'Purchase', icon: BarChart2 },
+    { id: 'stock', label: 'Stocks', icon: Package },
+    { id: 'creditors', label: 'Creditors', icon: Truck },
+    { id: 'debtors', label: 'Debtors', icon: Users },
+    { id: 'vehiclexpenses', label: 'Vehicle Expenses', icon: Truck },
+    { id: 'dailywages', label: 'Daily Wages', icon: DollarSign },
+    { id: 'monthlysalaries', label: 'Monthly Salaries', icon: Users },
     { id: 'gst', label: 'GST', icon: FileText },
     { id: 'profit', label: 'Profit & Loss', icon: DollarSign },
   ] as const
@@ -47,17 +53,18 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Date range (not for stock) */}
-      {tab !== 'stock' && (
-        <div className="card p-4 flex items-end gap-4 flex-wrap">
-          <div>
-            <label className="label">From Date</label>
-            <input type="date" className="input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">To Date</label>
-            <input type="date" className="input" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-          </div>
+      {/* Date range (not for stock, creditors, debtors, vehicles, wages, salaries) */}
+      {tab !== 'stock' && tab !== 'creditors' && tab !== 'debtors' && tab !== 'vehiclexpenses' && tab !== 'dailywages' && tab !== 'monthlysalaries' && (
+        <div className="card p-4 flex flex-col gap-2 w-fit">
+          <label className="label">Date Range</label>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onChange={(range) => {
+              setFromDate(range.from)
+              setToDate(range.to)
+            }}
+          />
         </div>
       )}
 
@@ -65,6 +72,11 @@ export default function ReportsPage() {
       {tab === 'sales' && <SalesReport from={fromDate} to={toDate} />}
       {tab === 'purchases' && <PurchaseReport from={fromDate} to={toDate} />}
       {tab === 'stock' && <StockReport />}
+      {tab === 'creditors' && <CreditorsReport />}
+      {tab === 'debtors' && <DebtorsReport />}
+      {tab === 'vehiclexpenses' && <VehicleExpensesReport />}
+      {tab === 'dailywages' && <DailyWagesReport />}
+      {tab === 'monthlysalaries' && <MonthlySalariesReport />}
       {tab === 'gst' && <GstReport from={fromDate} to={toDate} />}
       {tab === 'profit' && <ProfitLossReport from={fromDate} to={toDate} />}
     </div>
@@ -245,6 +257,419 @@ function ProfitLossReport({ from, to }: { from: string; to: string }) {
             color={(data?.gross_margin_percent ?? 0) >= 0 ? 'green' : 'red'} />
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Creditors Report ───────────────────────────────────────────────────────
+
+function CreditorsReport() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['report-creditors'],
+    queryFn: () => reportService.creditors(),
+  })
+  const [search, setSearch] = useState('')
+  const [filterOutstanding, setFilterOutstanding] = useState(true)
+
+  if (isLoading) return <p className="text-gray-400">Loading…</p>
+
+  const items = (filterOutstanding ? data?.outstanding_items : data?.all_items) || []
+  const filtered = items.filter((item: any) =>
+    (item.supplier_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.mobile || '').includes(search)
+  )
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatBox label="Total Creditors" value={data?.total_creditors ?? 0} color="yellow" />
+        <StatBox label="Total Outstanding Balance" value={fmtCurrency(data?.total_outstanding ?? 0)} color="red" />
+      </div>
+
+      <div className="card p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search supplier by name/phone..."
+            className="input pl-4"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="filter-outstanding-creditors"
+            checked={filterOutstanding}
+            onChange={(e) => setFilterOutstanding(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="filter-outstanding-creditors" className="text-sm font-semibold text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+            Show Outstanding Balance Only
+          </label>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-container border-0 rounded-none">
+          <table>
+            <thead>
+              <tr>
+                <th>Supplier Name</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>Total Purchases</th>
+                <th>Total Paid</th>
+                <th>Outstanding Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.supplier_id}>
+                  <td className="font-semibold dark:text-white">{r.supplier_name}</td>
+                  <td>{r.mobile}</td>
+                  <td>{r.email}</td>
+                  <td>{fmtCurrency(r.total_purchases)}</td>
+                  <td>{fmtCurrency(r.total_paid)}</td>
+                  <td className={`font-bold ${r.total_due > 0 ? 'text-red-500' : 'text-gray-500'}`}>{fmtCurrency(r.total_due)}</td>
+                </tr>
+              ))}
+              {!filtered.length && (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-400">
+                    No creditors found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Debtors Report ─────────────────────────────────────────────────────────
+
+function DebtorsReport() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['report-debtors'],
+    queryFn: () => reportService.debtors(),
+  })
+  const [search, setSearch] = useState('')
+  const [filterOutstanding, setFilterOutstanding] = useState(true)
+
+  if (isLoading) return <p className="text-gray-400">Loading…</p>
+
+  const items = (filterOutstanding ? data?.outstanding_items : data?.all_items) || []
+  const filtered = items.filter((item: any) =>
+    (item.customer_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.mobile || '').includes(search)
+  )
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatBox label="Total Debtors" value={data?.total_debtors ?? 0} color="blue" />
+        <StatBox label="Total Owed Balance" value={fmtCurrency(data?.total_outstanding ?? 0)} color="red" />
+      </div>
+
+      <div className="card p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search customer by name/phone..."
+            className="input pl-4"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="filter-outstanding-debtors"
+            checked={filterOutstanding}
+            onChange={(e) => setFilterOutstanding(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="filter-outstanding-debtors" className="text-sm font-semibold text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+            Show Outstanding Balance Only
+          </label>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-container border-0 rounded-none">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>Total Sales</th>
+                <th>Total Paid</th>
+                <th>Outstanding Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.customer_id}>
+                  <td className="font-semibold dark:text-white">{r.customer_name}</td>
+                  <td>{r.mobile}</td>
+                  <td>{r.email}</td>
+                  <td>{fmtCurrency(r.total_sales)}</td>
+                  <td>{fmtCurrency(r.total_paid)}</td>
+                  <td className={`font-bold ${r.total_due > 0 ? 'text-red-500' : 'text-gray-500'}`}>{fmtCurrency(r.total_due)}</td>
+                </tr>
+              ))}
+              {!filtered.length && (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-gray-400">
+                    No debtors found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Vehicle Expenses Report ───────────────────────────────────────────────
+
+function VehicleExpensesReport() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['report-vehicle-expenses'],
+    queryFn: () => reportService.vehicleExpenses(),
+  })
+  const [search, setSearch] = useState('')
+
+  if (isLoading) return <p className="text-gray-400">Loading…</p>
+
+  const filtered = (data?.all_items || []).filter((item: any) =>
+    (item.vehicle_no || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.expense_type || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.notes || '').toLowerCase().includes(search.toLowerCase())
+  )
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatBox label="Total Fuel Expenses" value={fmtCurrency(data?.total_fuel ?? 0)} color="yellow" />
+        <StatBox label="Total Maintenance" value={fmtCurrency(data?.total_maintenance ?? 0)} color="blue" />
+        <StatBox label="Total Other Expenses" value={fmtCurrency(data?.total_others ?? 0)} color="green" />
+        <StatBox label="Total Vehicle Expenses" value={fmtCurrency(data?.total_expenses ?? 0)} color="red" />
+      </div>
+
+      <div className="card p-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search expenses by vehicle / remarks..."
+            className="input pl-4"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-container border-0 rounded-none">
+          <table>
+            <thead>
+              <tr>
+                <th>Vehicle No</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Liters</th>
+                <th>Bill No</th>
+                <th>Notes</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.id}>
+                  <td className="font-semibold dark:text-white font-mono">{r.vehicle_no}</td>
+                  <td>{fmtDate(r.expense_date)}</td>
+                  <td className="capitalize">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      r.expense_type === 'fuel' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400' :
+                      r.expense_type === 'maintenance' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                    }`}>
+                      {r.expense_type}
+                    </span>
+                  </td>
+                  <td>{r.expense_type === 'fuel' ? `${r.liters || '—'} L` : '—'}</td>
+                  <td>{r.bill_no || '—'}</td>
+                  <td>{r.notes || '—'}</td>
+                  <td className="font-bold text-red-500">{fmtCurrency(r.amount)}</td>
+                </tr>
+              ))}
+              {!filtered.length && (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-gray-400">
+                    No expense records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Daily Wages Report ─────────────────────────────────────────────────────
+
+function DailyWagesReport() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['report-daily-wages'],
+    queryFn: () => reportService.dailyWages(),
+  })
+  const [search, setSearch] = useState('')
+
+  if (isLoading) return <p className="text-gray-400">Loading…</p>
+
+  const filtered = (data?.all_items || []).filter((item: any) =>
+    (item.staff_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.payment_period || '').includes(search)
+  )
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatBox label="Total Daily Wages Paid" value={fmtCurrency(data?.total_daily_wages ?? 0)} color="blue" />
+        <StatBox label="Wages Payout Logs Count" value={data?.all_items?.length ?? 0} color="green" />
+      </div>
+
+      <div className="card p-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search daily wages by employee name..."
+            className="input pl-4"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-container border-0 rounded-none">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Payment Date</th>
+                <th>Wages Date / Period</th>
+                <th>Notes</th>
+                <th>Amount Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.id}>
+                  <td className="font-semibold dark:text-white">{r.staff_name}</td>
+                  <td>{fmtDate(r.payment_date)}</td>
+                  <td>{r.payment_period}</td>
+                  <td>{r.notes || '—'}</td>
+                  <td className="font-bold text-green-600 dark:text-green-400">{fmtCurrency(r.amount)}</td>
+                </tr>
+              ))}
+              {!filtered.length && (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-400">
+                    No daily wages records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Monthly Salaries Report ────────────────────────────────────────────────
+
+function MonthlySalariesReport() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['report-monthly-salaries'],
+    queryFn: () => reportService.monthlySalaries(),
+  })
+  const [search, setSearch] = useState('')
+
+  if (isLoading) return <p className="text-gray-400">Loading…</p>
+
+  const filtered = (data?.all_items || []).filter((item: any) =>
+    (item.staff_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.payment_period || '').includes(search)
+  )
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  return (
+    <div className="space-y-4 animate-fadeIn">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatBox label="Total Monthly Salary Paid" value={fmtCurrency(data?.total_monthly_salaries ?? 0)} color="blue" />
+        <StatBox label="Salaries Paid Count" value={data?.all_items?.length ?? 0} color="green" />
+      </div>
+
+      <div className="card p-4">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search monthly salaries by employee name..."
+            className="input pl-4"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="table-container border-0 rounded-none">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Payment Date</th>
+                <th>Salary Month / Period</th>
+                <th>Notes</th>
+                <th>Amount Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.id}>
+                  <td className="font-semibold dark:text-white">{r.staff_name}</td>
+                  <td>{fmtDate(r.payment_date)}</td>
+                  <td>{r.payment_period}</td>
+                  <td>{r.notes || '—'}</td>
+                  <td className="font-bold text-green-600 dark:text-green-400">{fmtCurrency(r.amount)}</td>
+                </tr>
+              ))}
+              {!filtered.length && (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-400">
+                    No monthly salaries records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

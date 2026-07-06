@@ -24,7 +24,9 @@ const InvoicePrint = forwardRef<HTMLDivElement, Props>(({ sale }, ref) => {
           {settings.gst_number && <p className="text-gray-600">GSTIN: {settings.gst_number}</p>}
         </div>
         <div className="text-right">
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb' }}>TAX INVOICE</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb' }}>
+            {sale.tax_amount > 0 ? 'TAX INVOICE' : 'RETAIL INVOICE / BILL OF SUPPLY'}
+          </h2>
           <p><strong>Invoice #:</strong> {sale.invoice_number}</p>
           <p><strong>Date:</strong> {fmtDateTime(sale.sale_date)}</p>
           <p><strong>Payment:</strong> {sale.payment_method.toUpperCase()}</p>

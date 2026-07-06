@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Combobox } from '@/components/ui/Combobox'
 import { supplierService } from '@/services/supplier.service'
 import { productService } from '@/services/product.service'
 import { purchaseService } from '@/services/purchase.service'
@@ -36,7 +37,7 @@ export default function NewPurchasePage() {
     enabled: productSearch.length >= 1,
   })
 
-  const { register, handleSubmit, watch } = useForm<{ supplier_id: number; notes: string }>()
+  const { control, register, handleSubmit, watch } = useForm<{ supplier_id: number; notes: string }>()
 
   const create = useMutation({
     mutationFn: purchaseService.create,
@@ -210,10 +211,23 @@ export default function NewPurchasePage() {
 
               <div>
                 <label className="label">Supplier</label>
-                <select className="input" {...register('supplier_id', { valueAsNumber: true })}>
-                  <option value="">Walk-in / No supplier</option>
-                  {suppliers?.items.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                <Controller
+                  control={control}
+                  name="supplier_id"
+                  render={({ field }) => (
+                    <Combobox
+                      placeholder="Walk-in / No supplier"
+                      searchPlaceholder="Search supplier..."
+                      emptyMessage="No supplier found."
+                      options={[
+                        { value: 'walk-in', label: 'Walk-in / No supplier' },
+                        ...(suppliers?.items || []).map((s) => ({ value: s.id, label: s.name }))
+                      ]}
+                      value={field.value ?? 'walk-in'}
+                      onChange={(val) => field.onChange(val === 'walk-in' ? undefined : Number(val))}
+                    />
+                  )}
+                />
               </div>
 
               <div>
