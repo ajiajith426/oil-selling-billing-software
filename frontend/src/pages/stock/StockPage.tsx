@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
-import { Plus } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Combobox } from '@/components/ui/Combobox'
 import { stockService } from '@/services/stock.service'
@@ -27,6 +27,7 @@ const movementColors: Record<string, string> = {
 export default function StockPage() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
+  const [activeTab, setActiveTab] = useState<'movements' | 'lowstock'>('movements')
   const [modalOpen, setModalOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -34,15 +35,27 @@ export default function StockPage() {
     queryFn: () => stockService.movements({ skip: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE }),
   })
 
+  const { data: lowStock, isLoading: isLowStockLoading } = useQuery({
+    queryKey: ['low-stock-page'],
+    queryFn: productService.lowStock,
+  })
+  const lowStockCount = lowStock?.length ?? 0
+
   const { data: productsData } = useQuery({
     queryKey: ['products-all'],
     queryFn: () => productService.list({ limit: 500, is_active: true }),
   })
   const products = productsData?.items ?? []
 
-  const { control, register, handleSubmit, reset, formState: { errors } } = useForm<{
+  const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm<{
     product_id: number; movement_type: string; quantity: number; notes: string
   }>()
+
+  const openAdjustmentForProduct = (prodId: number) => {
+    reset()
+    setValue('product_id', prodId)
+    setModalOpen(true)
+  }
 
   const adjust = useMutation({
     mutationFn: stockService.adjust,
@@ -56,49 +69,128 @@ export default function StockPage() {
   })
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold dark:text-white">Stock Management</h1>
           <p className="text-sm text-gray-500">Track stock movements and adjustments</p>
         </div>
-        <button className="btn-primary" onClick={() => setModalOpen(true)}><Plus size={16} /> Adjust Stock</button>
+        <button className="btn-primary" onClick={() => { reset(); setModalOpen(true) }}><Plus size={16} /> Adjust Stock</button>
       </div>
 
-      {/* Low stock alert */}
-      <LowStockAlert />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+        <button
+          onClick={() => setActiveTab('movements')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'movements'
+              ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          }`}
+        >
+          Stock Movements
+        </button>
+        <button
+          onClick={() => setActiveTab('lowstock')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'lowstock'
+              ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          }`}
+        >
+          Low Stock Alerts
+          {lowStockCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 animate-pulse">
+              {lowStockCount}
+            </span>
+          )}
+        </button>
+      </div>
 
-      <div className="card">
-        <div className="table-container border-0 rounded-none">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th><th>Type</th><th>Qty</th>
-                <th>Before</th><th>After</th><th>Ref</th><th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? <TableSkeleton cols={7} /> : data?.items.map((m: StockMovement) => (
-                <tr key={m.id}>
-                  <td className="font-medium dark:text-white">{m.product_name}</td>
-                  <td><span className={movementColors[m.movement_type] ?? 'badge-gray'}>{m.movement_type.replace('_', ' ')}</span></td>
-                  <td className={['sale', 'stock_out', 'return_out'].includes(m.movement_type) ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
-                    {['sale', 'stock_out', 'return_out'].includes(m.movement_type) ? '-' : '+'}{m.quantity}
-                  </td>
-                  <td className="text-gray-500">{m.stock_before}</td>
-                  <td className="font-medium dark:text-white">{m.stock_after}</td>
-                  <td className="text-xs text-gray-400">{m.reference_type && `${m.reference_type} #${m.reference_id}`}</td>
-                  <td className="text-gray-500 text-xs">{fmtDateTime(m.created_at)}</td>
-                </tr>
-              ))}
-              {!isLoading && !data?.items.length && (
-                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No stock movements found</td></tr>
-              )}
-            </tbody>
-          </table>
+      {activeTab === 'movements' && (
+        <div className="space-y-4 animate-fadeIn">
+          <LowStockAlert />
+
+          <div className="card">
+            <div className="table-container border-0 rounded-none">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th><th>Type</th><th>Qty</th>
+                    <th>Before</th><th>After</th><th>Ref</th><th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? <TableSkeleton cols={7} /> : data?.items.map((m: StockMovement) => (
+                    <tr key={m.id}>
+                      <td className="font-medium dark:text-white">{m.product_name}</td>
+                      <td><span className={movementColors[m.movement_type] ?? 'badge-gray'}>{m.movement_type.replace('_', ' ')}</span></td>
+                      <td className={['sale', 'stock_out', 'return_out'].includes(m.movement_type) ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
+                        {['sale', 'stock_out', 'return_out'].includes(m.movement_type) ? '-' : '+'}{m.quantity}
+                      </td>
+                      <td className="text-gray-500">{m.stock_before}</td>
+                      <td className="font-medium dark:text-white">{m.stock_after}</td>
+                      <td className="text-xs text-gray-400">{m.reference_type && `${m.reference_type} #${m.reference_id}`}</td>
+                      <td className="text-gray-500 text-xs">{fmtDateTime(m.created_at)}</td>
+                    </tr>
+                  ))}
+                  {!isLoading && !data?.items.length && (
+                    <tr><td colSpan={7} className="text-center py-12 text-gray-400">No stock movements found</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} total={data?.total ?? 0} pageSize={PAGE_SIZE} onChange={setPage} />
+          </div>
         </div>
-        <Pagination page={page} total={data?.total ?? 0} pageSize={PAGE_SIZE} onChange={setPage} />
-      </div>
+      )}
+
+      {activeTab === 'lowstock' && (
+        <div className="card animate-fadeIn">
+          <div className="table-container border-0 rounded-none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Min Stock Limit</th>
+                  <th>Current Stock</th>
+                  <th>Unit</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLowStockLoading ? <TableSkeleton cols={7} /> : lowStock?.map((p) => (
+                  <tr key={p.id}>
+                    <td className="font-medium dark:text-white">{p.name}</td>
+                    <td className="font-mono text-xs">{p.sku || '—'}</td>
+                    <td>{p.minimum_stock}</td>
+                    <td className="font-bold text-red-500">{p.current_stock}</td>
+                    <td>{p.unit}</td>
+                    <td>
+                      <span className="badge-red text-[11px] px-2 py-0.5 rounded-full font-semibold">
+                        Low Stock
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => openAdjustmentForProduct(p.id)}
+                        className="btn-primary text-xs py-1 px-2.5 flex items-center gap-1.5"
+                      >
+                        <RefreshCw size={12} /> Adjust Stock
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!isLowStockLoading && !lowStock?.length && (
+                  <tr><td colSpan={7} className="text-center py-12 text-green-600 font-semibold dark:text-green-400">✅ All products stock levels are healthy!</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); reset() }} title="Stock Adjustment">
         <form onSubmit={handleSubmit((d) => adjust.mutate({ ...d, product_id: Number(d.product_id), quantity: Number(d.quantity) }))} className="space-y-4">

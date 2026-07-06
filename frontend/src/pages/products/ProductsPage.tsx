@@ -233,12 +233,7 @@ export default function ProductsPage() {
                 )}
               />
             </div>
-            {!editing && (
-              <div>
-                <label className="label">Opening Stock</label>
-                <input type="number" step="0.01" className="input" {...register('current_stock', { valueAsNumber: true })} />
-              </div>
-            )}
+
             <div>
               <label className="label">Minimum Stock</label>
               <input type="number" step="0.01" className="input" {...register('minimum_stock', { valueAsNumber: true })} />

@@ -111,9 +111,9 @@ export default function NewPurchasePage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-4 gap-6">
           {/* Left: cart */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* Product search */}
             <div className="card p-4">
               <label className="label">Search & Add Products</label>

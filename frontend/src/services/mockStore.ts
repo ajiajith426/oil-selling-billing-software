@@ -1,7 +1,7 @@
 import { Category, SubCategory, Product, Customer, Supplier, Sale, Purchase, StockMovement, Settings, User, Vehicle, VehicleExpense, Staff, SalaryPayment } from '@/types';
 
 // ── Seed version: bump this to wipe localStorage and reload fresh seed data ──
-const SEED_VERSION = 'v3-vehicle-staff';
+const SEED_VERSION = 'v4-vehicle-driver';
 
 const storedVersion = localStorage.getItem('mock_seed_version');
 if (storedVersion !== SEED_VERSION) {
@@ -311,8 +311,8 @@ const initialStockMovements: StockMovement[] = [
 ];
 
 const initialVehicles: Vehicle[] = [
-  { id: 1, vehicle_no: 'TN-59-AB-1234', model: 'Tata Ace', type: 'Mini Truck', is_active: true, created_at: new Date().toISOString() },
-  { id: 2, vehicle_no: 'TN-58-Q-9876', model: 'Mahindra Bolero Pik-Up', type: 'Pickup Van', is_active: true, created_at: new Date().toISOString() }
+  { id: 1, vehicle_no: 'TN-59-AB-1234', model: 'Tata Ace', type: 'Mini Truck', driver_id: 1, driver_name: 'Rajesh Kumar', is_active: true, created_at: new Date().toISOString() },
+  { id: 2, vehicle_no: 'TN-58-Q-9876', model: 'Mahindra Bolero Pik-Up', type: 'Pickup Van', driver_id: 2, driver_name: 'Suresh Moorthy', is_active: true, created_at: new Date().toISOString() }
 ];
 
 const initialVehicleExpenses: VehicleExpense[] = [
@@ -1123,11 +1123,14 @@ export const mockDB = {
   createVehicle: (data: Partial<Vehicle>) => {
     const list = mockDB.getVehicles();
     const nextId = list.length > 0 ? Math.max(...list.map(v => v.id)) + 1 : 1;
+    const staff = data.driver_id ? mockDB.getStaff().find(s => s.id === Number(data.driver_id)) : null;
     const newItem: Vehicle = {
       id: nextId,
       vehicle_no: data.vehicle_no || '',
       model: data.model || '',
       type: data.type || '',
+      driver_id: data.driver_id ? Number(data.driver_id) : undefined,
+      driver_name: staff ? staff.name : undefined,
       is_active: data.is_active !== false,
       created_at: new Date().toISOString()
     };
@@ -1139,7 +1142,13 @@ export const mockDB = {
     const list = mockDB.getVehicles();
     const idx = list.findIndex(v => v.id === id);
     if (idx === -1) throw new Error('Vehicle not found');
-    list[idx] = { ...list[idx], ...data };
+    const staff = data.driver_id ? mockDB.getStaff().find(s => s.id === Number(data.driver_id)) : null;
+    list[idx] = {
+      ...list[idx],
+      ...data,
+      driver_id: data.driver_id ? Number(data.driver_id) : list[idx].driver_id,
+      driver_name: staff ? staff.name : (data.driver_id === null ? undefined : list[idx].driver_name)
+    };
     mockDB.setVehicles(list);
     return list[idx];
   },

@@ -1,4 +1,4 @@
-import { Menu, Sun, Moon, LogOut, Bell, Droplet } from 'lucide-react'
+import { Menu, Sun, Moon, LogOut, Droplet } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useNavigate } from 'react-router-dom'
@@ -47,12 +47,6 @@ export default function Navbar({ onMenuClick }: Props) {
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        {/* Notifications */}
-        <button className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-all duration-200 relative">
-          <Bell size={18} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full ring-2 ring-white dark:ring-slate-900" />
         </button>
 
         {/* User profile details & avatar */}

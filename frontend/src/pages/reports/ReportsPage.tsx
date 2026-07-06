@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
-type ReportTab = 'sales' | 'purchases' | 'stock' | 'creditors' | 'debtors' | 'vehiclexpenses' | 'dailywages' | 'monthlysalaries' | 'gst' | 'profit'
+type ReportTab = 'sales' | 'purchases' | 'stock' | 'creditors' | 'debtors' | 'vehiclexpenses' | 'dailywages' | 'monthlysalaries' | 'profit'
 
 export default function ReportsPage() {
   const [tab, setTab] = useState<ReportTab>('sales')
@@ -24,7 +24,6 @@ export default function ReportsPage() {
     { id: 'vehiclexpenses', label: 'Vehicle Expenses', icon: Truck },
     { id: 'dailywages', label: 'Daily Wages', icon: DollarSign },
     { id: 'monthlysalaries', label: 'Monthly Salaries', icon: Users },
-    { id: 'gst', label: 'GST', icon: FileText },
     { id: 'profit', label: 'Profit & Loss', icon: DollarSign },
   ] as const
 
@@ -77,7 +76,6 @@ export default function ReportsPage() {
       {tab === 'vehiclexpenses' && <VehicleExpensesReport />}
       {tab === 'dailywages' && <DailyWagesReport />}
       {tab === 'monthlysalaries' && <MonthlySalariesReport />}
-      {tab === 'gst' && <GstReport from={fromDate} to={toDate} />}
       {tab === 'profit' && <ProfitLossReport from={fromDate} to={toDate} />}
     </div>
   )
@@ -92,34 +90,32 @@ function SalesReport({ from, to }: { from: string; to: string }) {
   })
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fadeIn">
       {isLoading ? <p className="text-gray-400">Loading…</p> : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatBox label="Total Bills" value={data?.total_bills ?? 0} />
-            <StatBox label="Total Sales" value={fmtCurrency(data?.total_sales ?? 0)} />
-            <StatBox label="Total Tax" value={fmtCurrency(data?.total_tax ?? 0)} />
-            <StatBox label="Total Discount" value={fmtCurrency(data?.total_discount ?? 0)} />
+          <div className="flex justify-between items-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1 mr-4">
+              <StatBox label="Total Bills" value={data?.total_bills ?? 0} />
+              <StatBox label="Total Sales" value={fmtCurrency(data?.total_sales ?? 0)} />
+              <StatBox label="Total Tax" value={fmtCurrency(data?.total_tax ?? 0)} />
+              <StatBox label="Total Discount" value={fmtCurrency(data?.total_discount ?? 0)} />
+            </div>
+            <button
+              onClick={() => {
+                const headers = ['Product', 'Qty Sold', 'Revenue (Rs.)', 'Tax (Rs.)']
+                const rows = (data?.product_wise || []).map((r: any) => [r.product, r.qty, r.revenue, r.tax])
+                downloadCsv(headers, rows, `sales_report_${from}_to_${to}.csv`)
+              }}
+              className="btn-primary flex items-center gap-1.5 self-start py-2.5 px-4 shadow-md text-xs font-semibold"
+            >
+              Download Report
+            </button>
           </div>
 
-          {data?.product_wise?.length > 0 && (
-            <div className="card p-5">
-              <h3 className="font-semibold mb-4 dark:text-white">Product-wise Sales</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.product_wise.slice(0, 10)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="product" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => fmtCurrency(v)} />
-                  <Legend />
-                  <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="tax" fill="#10b981" name="Tax" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
           <div className="card">
+            <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold dark:text-white text-sm">Product-wise Sales Details</h3>
+            </div>
             <div className="table-container border-0 rounded-none">
               <table>
                 <thead>
@@ -156,12 +152,30 @@ function PurchaseReport({ from, to }: { from: string; to: string }) {
   })
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {isLoading ? <p className="text-gray-400 col-span-3">Loading…</p> : (
+    <div className="space-y-4">
+      {isLoading ? <p className="text-gray-400">Loading…</p> : (
         <>
-          <StatBox label="Total Purchases" value={data?.total_purchases ?? 0} />
-          <StatBox label="Total Amount" value={fmtCurrency(data?.total_amount ?? 0)} />
-          <StatBox label="Total Tax" value={fmtCurrency(data?.total_tax ?? 0)} />
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                const headers = ['Metric', 'Value']
+                const rows = [
+                  ['Total Purchases Count', data?.total_purchases ?? 0],
+                  ['Total Amount (Rs.)', data?.total_amount ?? 0],
+                  ['Total Tax (Rs.)', data?.total_tax ?? 0]
+                ]
+                downloadCsv(headers, rows, `purchases_report_${from}_to_${to}.csv`)
+              }}
+              className="btn-primary text-xs py-2 px-3 shadow"
+            >
+              Download Report
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <StatBox label="Total Purchases" value={data?.total_purchases ?? 0} />
+            <StatBox label="Total Amount" value={fmtCurrency(data?.total_amount ?? 0)} />
+            <StatBox label="Total Tax" value={fmtCurrency(data?.total_tax ?? 0)} />
+          </div>
         </>
       )}
     </div>
@@ -180,11 +194,23 @@ function StockReport() {
     <div className="space-y-4">
       {isLoading ? <p className="text-gray-400">Loading…</p> : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatBox label="Total Products" value={data?.total_products ?? 0} />
-            <StatBox label="In Stock" value={data?.in_stock_count ?? 0} color="green" />
-            <StatBox label="Low Stock" value={data?.low_stock_count ?? 0} color="yellow" />
-            <StatBox label="Out of Stock" value={data?.out_of_stock_count ?? 0} color="red" />
+          <div className="flex justify-between items-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1 mr-4">
+              <StatBox label="Total Products" value={data?.total_products ?? 0} />
+              <StatBox label="In Stock" value={data?.in_stock_count ?? 0} color="green" />
+              <StatBox label="Low Stock" value={data?.low_stock_count ?? 0} color="yellow" />
+              <StatBox label="Out of Stock" value={data?.out_of_stock_count ?? 0} color="red" />
+            </div>
+            <button
+              onClick={() => {
+                const headers = ['Product', 'Current Stock', 'Minimum Stock', 'Unit']
+                const rows = (data?.low_stock_items || []).map((p: any) => [p.name, p.current_stock, p.minimum_stock, p.unit])
+                downloadCsv(headers, rows, `low_stock_items.csv`)
+              }}
+              className="btn-primary text-xs py-2.5 px-4 shadow self-start"
+            >
+              Download Report
+            </button>
           </div>
           <StatBox label="Total Stock Value" value={fmtCurrency(data?.total_stock_value ?? 0)} />
 
@@ -216,26 +242,7 @@ function StockReport() {
   )
 }
 
-// ── GST Report ────────────────────────────────────────────────────────────
-
-function GstReport({ from, to }: { from: string; to: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['report-gst', from, to],
-    queryFn: () => reportService.gst(from, to),
-  })
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {isLoading ? <p className="text-gray-400 col-span-3">Loading…</p> : (
-        <>
-          <StatBox label="GST Collected (Sales)" value={fmtCurrency(data?.gst_collected ?? 0)} color="green" />
-          <StatBox label="GST Paid (Purchases)" value={fmtCurrency(data?.gst_paid ?? 0)} color="red" />
-          <StatBox label="Net GST Payable" value={fmtCurrency(data?.net_gst ?? 0)} color={(data?.net_gst ?? 0) >= 0 ? 'blue' : 'green'} />
-        </>
-      )}
-    </div>
-  )
-}
+// GST Report removed
 
 // ── Profit & Loss ─────────────────────────────────────────────────────────
 
@@ -287,14 +294,24 @@ function CreditorsReport() {
       </div>
 
       <div className="card p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="relative w-full max-w-xs">
+        <div className="flex gap-2 items-center flex-1 max-w-md">
           <input
             type="text"
             placeholder="Search supplier by name/phone..."
-            className="input pl-4"
+            className="input pl-4 flex-1"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button
+            onClick={() => {
+              const headers = ['Supplier Name', 'Mobile', 'Email', 'Total Purchases (Rs.)', 'Total Paid (Rs.)', 'Outstanding Balance (Rs.)']
+              const rows = filtered.map((r: any) => [r.supplier_name, r.mobile, r.email, r.total_purchases, r.total_paid, r.total_due])
+              downloadCsv(headers, rows, 'creditors_report.csv')
+            }}
+            className="btn-outline text-xs py-2 px-3 flex items-center gap-1.5"
+          >
+            Download CSV
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -375,14 +392,24 @@ function DebtorsReport() {
       </div>
 
       <div className="card p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="relative w-full max-w-xs">
+        <div className="flex gap-2 items-center flex-1 max-w-md">
           <input
             type="text"
             placeholder="Search customer by name/phone..."
-            className="input pl-4"
+            className="input pl-4 flex-1"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button
+            onClick={() => {
+              const headers = ['Customer Name', 'Mobile', 'Email', 'Total Sales (Rs.)', 'Total Paid (Rs.)', 'Outstanding Balance (Rs.)']
+              const rows = filtered.map((r: any) => [r.customer_name, r.mobile, r.email, r.total_sales, r.total_paid, r.total_due])
+              downloadCsv(headers, rows, 'debtors_report.csv')
+            }}
+            className="btn-outline text-xs py-2 px-3 flex items-center gap-1.5"
+          >
+            Download CSV
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -465,7 +492,7 @@ function VehicleExpensesReport() {
         <StatBox label="Total Vehicle Expenses" value={fmtCurrency(data?.total_expenses ?? 0)} color="red" />
       </div>
 
-      <div className="card p-4">
+      <div className="card p-4 flex justify-between items-center">
         <div className="relative w-full max-w-xs">
           <input
             type="text"
@@ -475,6 +502,16 @@ function VehicleExpensesReport() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <button
+          onClick={() => {
+            const headers = ['Vehicle No', 'Date', 'Category', 'Liters', 'Bill No', 'Notes', 'Amount (Rs.)']
+            const rows = filtered.map((r: any) => [r.vehicle_no, r.expense_date, r.expense_type, r.liters, r.bill_no, r.notes, r.amount])
+            downloadCsv(headers, rows, 'vehicle_expenses_report.csv')
+          }}
+          className="btn-outline text-xs py-2 px-3"
+        >
+          Download CSV
+        </button>
       </div>
 
       <div className="card">
@@ -551,7 +588,7 @@ function DailyWagesReport() {
         <StatBox label="Wages Payout Logs Count" value={data?.all_items?.length ?? 0} color="green" />
       </div>
 
-      <div className="card p-4">
+      <div className="card p-4 flex justify-between items-center">
         <div className="relative w-full max-w-xs">
           <input
             type="text"
@@ -561,6 +598,16 @@ function DailyWagesReport() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <button
+          onClick={() => {
+            const headers = ['Employee Name', 'Payment Date', 'Wages Date / Period', 'Notes', 'Amount Paid (Rs.)']
+            const rows = filtered.map((r: any) => [r.staff_name, r.payment_date, r.payment_period, r.notes, r.amount])
+            downloadCsv(headers, rows, 'daily_wages_report.csv')
+          }}
+          className="btn-outline text-xs py-2 px-3"
+        >
+          Download CSV
+        </button>
       </div>
 
       <div className="card">
@@ -625,7 +672,7 @@ function MonthlySalariesReport() {
         <StatBox label="Salaries Paid Count" value={data?.all_items?.length ?? 0} color="green" />
       </div>
 
-      <div className="card p-4">
+      <div className="card p-4 flex justify-between items-center">
         <div className="relative w-full max-w-xs">
           <input
             type="text"
@@ -635,6 +682,16 @@ function MonthlySalariesReport() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <button
+          onClick={() => {
+            const headers = ['Employee Name', 'Payment Date', 'Salary Month / Period', 'Notes', 'Amount Paid (Rs.)']
+            const rows = filtered.map((r: any) => [r.staff_name, r.payment_date, r.payment_period, r.notes, r.amount])
+            downloadCsv(headers, rows, 'monthly_salaries_report.csv')
+          }}
+          className="btn-outline text-xs py-2 px-3"
+        >
+          Download CSV
+        </button>
       </div>
 
       <div className="card">
@@ -684,9 +741,29 @@ function StatBox({ label, value, color = 'blue' }: { label: string; value: strin
     yellow: 'text-yellow-600 dark:text-yellow-400',
   }
   return (
-    <div className="card p-5">
-      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${colors[color] ?? colors.blue}`}>{value}</p>
+    <div className="card p-3 shadow-sm">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+      <p className={`text-lg font-extrabold mt-0.5 ${colors[color] ?? colors.blue}`}>{value}</p>
     </div>
   )
+}
+
+function downloadCsv(headers: string[], rows: any[][], filename: string) {
+  const csvContent = [
+    headers.map(h => `"${h.replace(/'/g, "''").replace(/"/g, '""')}"`).join(','),
+    ...rows.map(row => row.map(val => {
+      const str = String(val ?? '').replace(/"/g, '""')
+      return `"${str}"`
+    }).join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', filename)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }

@@ -143,7 +143,7 @@ export interface Sale {
   grand_total: number
   paid_amount: number
   change_amount: number
-  payment_method: 'cash' | 'card' | 'upi' | 'split'
+  payment_method: 'cash' | 'card' | 'upi' | 'split' | 'credit'
   cash_amount: number
   card_amount: number
   upi_amount: number
@@ -211,6 +211,8 @@ export interface Vehicle {
   vehicle_no: string
   model: string
   type: string
+  driver_id?: number
+  driver_name?: string
   is_active: boolean
   created_at: string
 }

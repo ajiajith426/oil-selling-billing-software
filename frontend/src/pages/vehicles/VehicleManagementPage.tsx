@@ -6,7 +6,8 @@ import toast from 'react-hot-toast'
 import { Combobox } from '@/components/ui/Combobox'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { vehicleService } from '@/services/vehicle.service'
-import { Vehicle, VehicleExpense } from '@/types'
+import { staffService } from '@/services/staff.service'
+import { Vehicle, VehicleExpense, Staff } from '@/types'
 import Modal from '@/components/ui/Modal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Pagination from '@/components/ui/Pagination'
@@ -17,12 +18,13 @@ import { fmtCurrency, fmtDate } from '@/utils/format'
 const PAGE_SIZE = 15
 
 // ── Vehicle Form Component ───────────────────────────────────────────────
-function VehicleForm({ onSubmit, loading, initial }: {
+function VehicleForm({ onSubmit, loading, initial, staffList }: {
   onSubmit: (d: Partial<Vehicle>) => void
   loading: boolean
   initial?: Vehicle | null
+  staffList: Staff[]
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<Partial<Vehicle>>({
+  const { control, register, handleSubmit, formState: { errors } } = useForm<Partial<Vehicle>>({
     defaultValues: initial ?? { is_active: true }
   })
   return (
@@ -42,6 +44,26 @@ function VehicleForm({ onSubmit, loading, initial }: {
           <label className="label">Type *</label>
           <input className="input" placeholder="e.g. Mini Truck" {...register('type', { required: 'Type is required' })} />
           {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type.message}</p>}
+        </div>
+        <div className="col-span-2">
+          <label className="label">Assigned Driver / Staff</label>
+          <Controller
+            control={control}
+            name="driver_id"
+            render={({ field }) => (
+              <Combobox
+                placeholder="Select Driver (optional)"
+                searchPlaceholder="Search staff member..."
+                emptyMessage="No driver found."
+                options={[
+                  { value: 'none', label: 'No Driver' },
+                  ...staffList.filter(s => s.role.toLowerCase().includes('driver') && s.is_active).map(s => ({ value: s.id, label: `${s.name} (${s.role})` }))
+                ]}
+                value={field.value ?? 'none'}
+                onChange={(val) => field.onChange(val === 'none' ? null : Number(val))}
+              />
+            )}
+          />
         </div>
         <div className="col-span-2 flex items-center gap-2 pt-2">
           <input type="checkbox" id="is_active_vehicle" className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" {...register('is_active')} />
@@ -192,6 +214,11 @@ export default function VehicleManagementPage() {
     queryFn: () => vehicleService.list({ skip: (vPage - 1) * PAGE_SIZE, limit: PAGE_SIZE, search: debouncedVSearch || undefined }),
   })
 
+  const staffQuery = useQuery({
+    queryKey: ['staff-all-vehicles'],
+    queryFn: () => staffService.list({ limit: 100 }),
+  })
+
   // Fetch all vehicles for dropdown selection (no pagination)
   const allVehiclesQuery = useQuery({
     queryKey: ['vehicles-all'],
@@ -318,17 +345,19 @@ export default function VehicleManagementPage() {
                     <th>Vehicle No</th>
                     <th>Model</th>
                     <th>Type</th>
+                    <th>Assigned Driver</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {vehiclesQuery.isLoading ? <TableSkeleton cols={6} /> : vehiclesQuery.data?.items.map((v, i) => (
+                  {vehiclesQuery.isLoading ? <TableSkeleton cols={7} /> : vehiclesQuery.data?.items.map((v, i) => (
                     <tr key={v.id}>
                       <td className="text-gray-400">{(vPage - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="font-semibold dark:text-white font-mono">{v.vehicle_no}</td>
                       <td>{v.model}</td>
                       <td>{v.type}</td>
+                      <td className="font-medium dark:text-gray-200">{v.driver_name || '—'}</td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${v.is_active ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
                           {v.is_active ? 'Active' : 'Inactive'}
@@ -426,7 +455,12 @@ export default function VehicleManagementPage() {
       {/* Vehicle Form Modal */}
       <Modal open={vModalOpen} onClose={() => { setVModalOpen(false); setVEditing(null) }}
         title={vEditing ? 'Edit Vehicle details' : 'Register Vehicle'} size="md">
-        <VehicleForm onSubmit={(d) => upsertVehicle.mutate(d)} loading={upsertVehicle.isPending} initial={vEditing} />
+        <VehicleForm
+          onSubmit={(d) => upsertVehicle.mutate(d)}
+          loading={upsertVehicle.isPending}
+          initial={vEditing}
+          staffList={staffQuery.data?.items || []}
+        />
       </Modal>
 
       {/* Expense Form Modal */}

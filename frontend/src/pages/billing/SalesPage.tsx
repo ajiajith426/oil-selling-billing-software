@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { XCircle, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -6,7 +7,6 @@ import { saleService } from '@/services/sale.service'
 import { Sale } from '@/types'
 import Pagination from '@/components/ui/Pagination'
 import { TableSkeleton } from '@/components/ui/LoadingSkeleton'
-import Modal from '@/components/ui/Modal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { fmtCurrency, fmtDateTime } from '@/utils/format'
 
@@ -20,8 +20,8 @@ const statusColors: Record<string, string> = {
 
 export default function SalesPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [viewSale, setViewSale] = useState<Sale | null>(null)
   const [cancelId, setCancelId] = useState<number | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -66,7 +66,7 @@ export default function SalesPage() {
                   <td><span className={statusColors[s.status] ?? 'badge-gray'}>{s.status}</span></td>
                   <td>
                     <div className="flex gap-2">
-                      <button className="btn-outline py-1 px-2" onClick={() => setViewSale(s)}>
+                      <button className="btn-outline py-1 px-2" onClick={() => navigate(`/sales/${s.id}`)}>
                         <Eye size={14} />
                       </button>
                       {s.status === 'completed' && (
@@ -87,60 +87,7 @@ export default function SalesPage() {
         <Pagination page={page} total={data?.total ?? 0} pageSize={PAGE_SIZE} onChange={setPage} />
       </div>
 
-      {/* Sale detail modal */}
-      <Modal open={!!viewSale} onClose={() => setViewSale(null)} title={`Invoice: ${viewSale?.invoice_number}`} size="lg">
-        {viewSale && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500">Customer</p>
-                <p className="font-medium dark:text-white">{viewSale.customer_name || 'Walk-in'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Date</p>
-                <p className="font-medium dark:text-white">{fmtDateTime(viewSale.sale_date)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Payment</p>
-                <p className="font-medium capitalize dark:text-white">{viewSale.payment_method}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Status</p>
-                <span className={statusColors[viewSale.status]}>{viewSale.status}</span>
-              </div>
-            </div>
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr><th>Product</th><th>Qty</th><th>Price</th><th>GST</th><th>Total</th></tr>
-                </thead>
-                <tbody>
-                  {viewSale.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.product_name}</td>
-                      <td>{item.quantity}</td>
-                      <td>{fmtCurrency(item.unit_price)}</td>
-                      <td>{fmtCurrency(item.gst_amount)}</td>
-                      <td className="font-semibold">{fmtCurrency(item.total_amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex justify-end">
-              <div className="space-y-1 text-sm min-w-[200px]">
-                <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{fmtCurrency(viewSale.subtotal)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Tax</span><span>{fmtCurrency(viewSale.tax_amount)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Discount</span><span>-{fmtCurrency(viewSale.discount_amount)}</span></div>
-                <div className="flex justify-between font-bold text-base border-t pt-1 dark:border-gray-600">
-                  <span className="dark:text-white">Total</span>
-                  <span className="text-blue-600">{fmtCurrency(viewSale.grand_total)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {/* Detail Modal removed, now navigates to SaleDetailPage */}
 
       <ConfirmDialog
         open={cancelId !== null}

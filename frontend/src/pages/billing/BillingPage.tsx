@@ -19,7 +19,7 @@ interface CartItem {
   discount_percent: number
 }
 
-type PaymentMethod = 'cash' | 'card' | 'upi' | 'split'
+type PaymentMethod = 'cash' | 'credit' | 'upi' | 'split'
 
 export default function BillingPage() {
   const qc = useQueryClient()
@@ -32,7 +32,6 @@ export default function BillingPage() {
   const [discountAmount, setDiscountAmount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [cashAmount, setCashAmount] = useState(0)
-  const [cardAmount, setCardAmount] = useState(0)
   const [upiAmount, setUpiAmount] = useState(0)
   const [notes, setNotes] = useState('')
   const [completedSale, setCompletedSale] = useState<Sale | null>(null)
@@ -109,7 +108,7 @@ export default function BillingPage() {
       }, 0)
     : 0
   const grandTotal = subtotal + taxAmount - discountAmount
-  const paidAmount = paymentMethod === 'split' ? cashAmount + cardAmount + upiAmount : cashAmount || cardAmount || upiAmount
+  const paidAmount = paymentMethod === 'split' ? cashAmount + upiAmount : cashAmount || upiAmount
   const changeAmount = Math.max(0, (paymentMethod === 'cash' ? cashAmount : paidAmount) - grandTotal)
 
   const clearBill = () => {
@@ -117,7 +116,6 @@ export default function BillingPage() {
     setCompletedSale(null)
     setDiscountAmount(0)
     setCashAmount(0)
-    setCardAmount(0)
     setUpiAmount(0)
     setCustomerId(undefined)
     setNotes('')
@@ -126,16 +124,28 @@ export default function BillingPage() {
 
   const handleCheckout = () => {
     if (!cart.length) { toast.error('Cart is empty'); return }
+    if (paymentMethod === 'credit' && !customerId) {
+      toast.error('Customer selection is required for Credit / Kadan sales')
+      return
+    }
+
     const payMap = {
       cash: { cash_amount: grandTotal, card_amount: 0, upi_amount: 0 },
-      card: { cash_amount: 0, card_amount: grandTotal, upi_amount: 0 },
+      credit: { cash_amount: 0, card_amount: 0, upi_amount: 0 },
       upi: { cash_amount: 0, card_amount: 0, upi_amount: grandTotal },
-      split: { cash_amount: cashAmount, card_amount: cardAmount, upi_amount: upiAmount },
+      split: { cash_amount: cashAmount, card_amount: 0, upi_amount: upiAmount },
     }
+
+    let paidAmt = 0
+    if (paymentMethod === 'cash') paidAmt = cashAmount
+    else if (paymentMethod === 'upi') paidAmt = upiAmount
+    else if (paymentMethod === 'split') paidAmt = cashAmount + upiAmount
+    else if (paymentMethod === 'credit') paidAmt = 0
+
     createSale.mutate({
       customer_id: customerId,
       discount_amount: discountAmount,
-      paid_amount: paymentMethod === 'cash' ? cashAmount : paidAmount,
+      paid_amount: paidAmt,
       payment_method: paymentMethod,
       notes,
       items: cart.map((c) => ({
@@ -151,7 +161,7 @@ export default function BillingPage() {
 
   return (
     <div className="h-full">
-      <div className="grid lg:grid-cols-5 gap-4 h-full">
+      <div className="grid lg:grid-cols-4 gap-4 h-full">
         {/* Left: product search + cart */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -286,7 +296,7 @@ export default function BillingPage() {
         </div>
 
         {/* Right: checkout panel */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-1 space-y-4">
           <div className="card p-5 space-y-4">
             <h2 className="font-semibold dark:text-white">Customer & Payment</h2>
 
@@ -332,15 +342,15 @@ export default function BillingPage() {
             {/* Payment method */}
             <div>
               <label className="label">Payment Method</label>
-              <div className="grid grid-cols-4 gap-2">
-                {(['cash', 'card', 'upi', 'split'] as PaymentMethod[]).map((m) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(['cash', 'credit', 'upi', 'split'] as PaymentMethod[]).map((m) => (
                   <button key={m} type="button"
                     onClick={() => setPaymentMethod(m)}
                     className={`py-2 rounded-lg text-xs font-semibold capitalize border transition-colors ${paymentMethod === m
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}>
-                    {m}
+                    {m === 'credit' ? 'Credit / Kadan' : m}
                   </button>
                 ))}
               </div>
@@ -357,10 +367,9 @@ export default function BillingPage() {
                 )}
               </div>
             )}
-            {paymentMethod === 'card' && (
-              <div>
-                <label className="label">Card Amount (₹)</label>
-                <input type="number" step="0.01" className="input" value={cardAmount} onChange={(e) => setCardAmount(parseFloat(e.target.value) || 0)} />
+            {paymentMethod === 'credit' && (
+              <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-900/50 animate-fadeIn">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">This transaction will be recorded on credit. Outstanding amount will be updated for {customerId ? 'this customer' : 'selected customer'}.</p>
               </div>
             )}
             {paymentMethod === 'upi' && (
@@ -370,10 +379,9 @@ export default function BillingPage() {
               </div>
             )}
             {paymentMethod === 'split' && (
-              <div className="space-y-2">
-                <div><label className="label">Cash</label><input type="number" step="0.01" className="input" value={cashAmount} onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)} /></div>
-                <div><label className="label">Card</label><input type="number" step="0.01" className="input" value={cardAmount} onChange={(e) => setCardAmount(parseFloat(e.target.value) || 0)} /></div>
-                <div><label className="label">UPI</label><input type="number" step="0.01" className="input" value={upiAmount} onChange={(e) => setUpiAmount(parseFloat(e.target.value) || 0)} /></div>
+              <div className="space-y-2 animate-fadeIn">
+                <div><label className="label">Cash Amount (₹)</label><input type="number" step="0.01" className="input" value={cashAmount} onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)} /></div>
+                <div><label className="label">UPI Amount (₹)</label><input type="number" step="0.01" className="input" value={upiAmount} onChange={(e) => setUpiAmount(parseFloat(e.target.value) || 0)} /></div>
               </div>
             )}
 
