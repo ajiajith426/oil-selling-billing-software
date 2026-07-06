@@ -8,9 +8,13 @@ from app.models.purchase import Purchase, PurchaseItem
 from app.models.sale import Sale, SaleItem
 from app.models.stock import StockMovement
 from app.models.settings import CompanySettings
+from app.models.staff import Staff
+from app.models.vehicle import Vehicle, VehicleAssignment, VehicleMaintenanceLog
 
 __all__ = [
     "User", "Category", "SubCategory", "Product",
     "Customer", "Supplier", "Purchase", "PurchaseItem",
     "Sale", "SaleItem", "StockMovement", "CompanySettings",
+    "Staff",
+    "Vehicle", "VehicleAssignment", "VehicleMaintenanceLog",
 ]
