@@ -9,9 +9,12 @@ import {
 import { dashboardService } from '@/services/dashboard.service'
 import StatCard from '@/components/ui/StatCard'
 import { SkeletonCard } from '@/components/ui/LoadingSkeleton'
-import { fmtCurrency, fmtDate } from '@/utils/format'
+import { fmtCurrency, fmtDateTime } from '@/utils/format'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Dashboard() {
+  const { user } = useAuth()
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: dashboardService.stats,
@@ -33,13 +36,20 @@ export default function Dashboard() {
     queryFn: () => dashboardService.topProducts(8),
   })
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const getGreeting = () => {
+    const hr = new Date().getHours()
+    if (hr < 12) return 'Good morning'
+    if (hr < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold dark:text-white">Dashboard</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Welcome back! Here's what's happening.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          {getGreeting()}, {user?.name || 'Admin'}! Here's what's happening.
+        </p>
       </div>
 
       {/* Stats grid */}
@@ -68,15 +78,15 @@ export default function Dashboard() {
             <AreaChart data={salesGraph ?? []}>
               <defs>
                 <linearGradient id="sales-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => fmtCurrency(v)} />
-              <Area type="monotone" dataKey="total" stroke="#3b82f6" fill="url(#sales-grad)" strokeWidth={2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-800" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} className="dark:text-slate-400" />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} className="dark:text-slate-400" />
+              <Tooltip formatter={(v: number) => fmtCurrency(v)} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }} />
+              <Area type="monotone" dataKey="total" stroke="#d97706" fill="url(#sales-grad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -85,16 +95,13 @@ export default function Dashboard() {
         <div className="card p-5">
           <h2 className="text-base font-semibold mb-4 dark:text-white">Monthly Revenue</h2>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={(monthlyRevenue ?? []).map((r: { month: number; revenue: number; tax: number }) => ({
-              ...r,
-              name: months[r.month - 1],
-            }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => fmtCurrency(v)} />
+            <BarChart data={monthlyRevenue ?? []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-800" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} className="dark:text-slate-400" />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} className="dark:text-slate-400" />
+              <Tooltip formatter={(v: number) => fmtCurrency(v)} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }} />
               <Legend />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Revenue" />
+              <Bar dataKey="revenue" fill="#d97706" radius={[4, 4, 0, 0]} name="Revenue" />
               <Bar dataKey="tax" fill="#10b981" radius={[4, 4, 0, 0]} name="Tax" />
             </BarChart>
           </ResponsiveContainer>
@@ -168,7 +175,7 @@ export default function Dashboard() {
                   </tr>
                 ))}
                 {!topProducts?.length && (
-                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">No data yet</td></tr>
+                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">No sales data yet</td></tr>
                 )}
               </tbody>
             </table>

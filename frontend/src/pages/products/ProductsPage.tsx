@@ -189,7 +189,7 @@ export default function ProductsPage() {
             <div>
               <label className="label">Unit</label>
               <select className="input" {...register('unit')}>
-                {['Pcs', 'Kg', 'Ltr', 'Box', 'Dozen', 'Meter', 'Bag'].map((u) => (
+                {['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => (
                   <option key={u} value={u}>{u}</option>
                 ))}
               </select>

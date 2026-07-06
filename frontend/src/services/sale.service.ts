@@ -1,10 +1,23 @@
-import api from './api'
 import { Sale, PaginatedResponse } from '@/types'
+import { mockDB, getPaginatedResponse } from './mockStore'
 
 export const saleService = {
-  list: (params?: Record<string, unknown>) =>
-    api.get<PaginatedResponse<Sale>>('/sales', { params }).then((r) => r.data),
-  get: (id: number) => api.get<Sale>(`/sales/${id}`).then((r) => r.data),
-  create: (data: unknown) => api.post<Sale>('/sales', data).then((r) => r.data),
-  cancel: (id: number) => api.post<Sale>(`/sales/${id}/cancel`).then((r) => r.data),
+  list: async (params?: Record<string, unknown>): Promise<PaginatedResponse<Sale>> => {
+    await new Promise((r) => setTimeout(r, 100));
+    return getPaginatedResponse(mockDB.getSales(), params);
+  },
+  get: async (id: number): Promise<Sale> => {
+    await new Promise((r) => setTimeout(r, 100));
+    const sale = mockDB.getSales().find(s => s.id === id);
+    if (!sale) throw new Error('Sale not found');
+    return sale;
+  },
+  create: async (data: unknown): Promise<Sale> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.createSale(data);
+  },
+  cancel: async (id: number): Promise<Sale> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.cancelSale(id);
+  },
 }

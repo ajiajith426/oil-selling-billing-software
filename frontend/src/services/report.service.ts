@@ -1,13 +1,24 @@
-import api from './api'
+import { mockDB } from './mockStore'
 
 export const reportService = {
-  sales: (from_date: string, to_date: string) =>
-    api.get('/reports/sales', { params: { from_date, to_date } }).then((r) => r.data),
-  purchases: (from_date: string, to_date: string) =>
-    api.get('/reports/purchases', { params: { from_date, to_date } }).then((r) => r.data),
-  stock: () => api.get('/reports/stock').then((r) => r.data),
-  gst: (from_date: string, to_date: string) =>
-    api.get('/reports/gst', { params: { from_date, to_date } }).then((r) => r.data),
-  profitLoss: (from_date: string, to_date: string) =>
-    api.get('/reports/profit-loss', { params: { from_date, to_date } }).then((r) => r.data),
+  sales: async (from_date: string, to_date: string): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.getReportsSales(from_date, to_date);
+  },
+  purchases: async (from_date: string, to_date: string): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.getReportsPurchases(from_date, to_date);
+  },
+  stock: async (): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.getReportsStock();
+  },
+  gst: async (from_date: string, to_date: string): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.getReportsGst(from_date, to_date);
+  },
+  profitLoss: async (from_date: string, to_date: string): Promise<any> => {
+    await new Promise((r) => setTimeout(r, 150));
+    return mockDB.getReportsProfitLoss(from_date, to_date);
+  },
 }
