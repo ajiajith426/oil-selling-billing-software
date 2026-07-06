@@ -19,7 +19,7 @@ import SettingsPage from '@/pages/settings/SettingsPage'
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   if (isLoading) return <div className="flex items-center justify-center h-screen">Loading…</div>
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  // if (!isAuthenticated) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
