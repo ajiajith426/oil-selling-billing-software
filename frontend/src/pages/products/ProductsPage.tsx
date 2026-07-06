@@ -36,15 +36,9 @@ export default function ProductsPage() {
   })
   const categories = categoriesData?.items ?? []
 
-  const { control, register, handleSubmit, reset, watch, formState: { errors } } = useForm<Partial<Product>>()
-  const selectedCat = watch('category_id')
+  const { control, register, handleSubmit, reset, formState: { errors } } = useForm<Partial<Product>>()
 
-  const { data: subCatData } = useQuery({
-    queryKey: ['subcategories-by-cat', selectedCat],
-    queryFn: () => categoryService.listSub({ category_id: selectedCat, limit: 200 }),
-    enabled: !!selectedCat,
-  })
-  const subcategories = subCatData?.items ?? []
+
 
   const upsert = useMutation({
     mutationFn: (d: Partial<Product>) =>
@@ -169,27 +163,6 @@ export default function ProductsPage() {
                     ]}
                     value={field.value ?? 'none'}
                     onChange={(val) => field.onChange(val === 'none' ? undefined : Number(val))}
-                  />
-                )}
-              />
-            </div>
-            <div>
-              <label className="label">Sub Category</label>
-              <Controller
-                control={control}
-                name="subcategory_id"
-                render={({ field }) => (
-                  <Combobox
-                    placeholder="Select sub category"
-                    searchPlaceholder="Search subcategory..."
-                    emptyMessage="No subcategory found."
-                    options={[
-                      { value: 'none', label: 'Select sub category' },
-                      ...subcategories.map((s) => ({ value: s.id, label: s.name }))
-                    ]}
-                    value={field.value ?? 'none'}
-                    onChange={(val) => field.onChange(val === 'none' ? undefined : Number(val))}
-                    disabled={!selectedCat}
                   />
                 )}
               />
