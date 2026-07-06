@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/billing_db"
+    DATABASE_URL: str = "postgresql://neondb_owner:npg_yvT3OX6RAgSz@ep-weathered-silence-atn55x7g.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
     # JWT
     SECRET_KEY: str = secrets.token_urlsafe(32)

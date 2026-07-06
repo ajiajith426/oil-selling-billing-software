@@ -1,14 +1,21 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import os
 
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.database.session import engine, Base
 
-# Create tables on startup (Alembic handles migrations in production)
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create all tables on startup (deferred so import doesn't crash)
+    Base.metadata.create_all(bind=engine)
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    yield
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -16,6 +23,7 @@ app = FastAPI(
     description="Billing & Inventory Management System API",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS
@@ -27,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files for uploads
+# Static files for uploads (directory created in lifespan)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 

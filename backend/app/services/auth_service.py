@@ -10,6 +10,7 @@ class AuthService:
         self.db = db
 
     def login(self, data: LoginRequest) -> TokenResponse:
+     
         user = self.db.query(User).filter(User.email == data.email).first()
         if not user or not verify_password(data.password, user.hashed_password):
             raise HTTPException(
