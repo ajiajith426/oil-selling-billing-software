@@ -121,7 +121,7 @@ export default function BillingPage() {
   }
 
   const handleCheckout = () => {
-    if (!cart.length) { toast.error('Cart is empty'); return }
+    if (!cart.length) { toast.error('Carts is empty'); return }
     const payMap = {
       cash: { cash_amount: grandTotal, card_amount: 0, upi_amount: 0 },
       card: { cash_amount: 0, card_amount: grandTotal, upi_amount: 0 },
@@ -306,7 +306,7 @@ export default function BillingPage() {
                     className={`py-2 rounded-lg text-xs font-semibold capitalize border transition-colors ${paymentMethod === m
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}>
+                      }`}>
                     {m}
                   </button>
                 ))}
