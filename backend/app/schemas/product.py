@@ -7,7 +7,6 @@ from datetime import datetime
 class ProductBase(BaseModel):
     name: str
     category_id: Optional[int] = None
-    subcategory_id: Optional[int] = None
     sku: Optional[str] = None
     barcode: Optional[str] = None
     purchase_price: Decimal = Decimal("0")
@@ -27,7 +26,6 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     category_id: Optional[int] = None
-    subcategory_id: Optional[int] = None
     sku: Optional[str] = None
     barcode: Optional[str] = None
     purchase_price: Optional[Decimal] = None
@@ -47,7 +45,6 @@ class ProductResponse(ProductBase):
     image_url: Optional[str] = None
     created_at: datetime
     category_name: Optional[str] = None
-    subcategory_name: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -10,7 +10,6 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-    subcategory_id = Column(Integer, ForeignKey("subcategories.id"), nullable=True)
     sku = Column(String(100), unique=True, nullable=True, index=True)
     barcode = Column(String(100), unique=True, nullable=True, index=True)
     purchase_price = Column(Numeric(12, 2), default=0)
@@ -27,7 +26,6 @@ class Product(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     category = relationship("Category", back_populates="products")
-    subcategory = relationship("SubCategory", back_populates="products")
     purchase_items = relationship("PurchaseItem", back_populates="product")
     sale_items = relationship("SaleItem", back_populates="product")
     stock_movements = relationship("StockMovement", back_populates="product")

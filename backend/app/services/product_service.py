@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from typing import Optional, List
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from app.models.product import Product
-from app.models.category import Category
-from app.models.subcategory import SubCategory
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 import csv
 import io
@@ -18,21 +16,25 @@ class ProductService:
         resp = ProductResponse.model_validate(p)
         if p.category:
             resp.category_name = p.category.name
-        if p.subcategory:
-            resp.subcategory_name = p.subcategory.name
         return resp
 
-    def get_all(self, skip: int = 0, limit: int = 50, search: Optional[str] = None,
-                category_id: Optional[int] = None, is_active: Optional[bool] = None):
-        q = self.db.query(Product).options(
-            joinedload(Product.category), joinedload(Product.subcategory)
-        )
+    def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+        search: Optional[str] = None,
+        category_id: Optional[int] = None,
+        is_active: Optional[bool] = None,
+    ):
+        q = self.db.query(Product).options(joinedload(Product.category))
         if search:
-            q = q.filter(or_(
-                Product.name.ilike(f"%{search}%"),
-                Product.sku.ilike(f"%{search}%"),
-                Product.barcode.ilike(f"%{search}%"),
-            ))
+            q = q.filter(
+                or_(
+                    Product.name.ilike(f"%{search}%"),
+                    Product.sku.ilike(f"%{search}%"),
+                    Product.barcode.ilike(f"%{search}%"),
+                )
+            )
         if category_id:
             q = q.filter(Product.category_id == category_id)
         if is_active is not None:
@@ -42,17 +44,23 @@ class ProductService:
         return total, [self._enrich(p) for p in items]
 
     def get_by_id(self, product_id: int) -> ProductResponse:
-        p = self.db.query(Product).options(
-            joinedload(Product.category), joinedload(Product.subcategory)
-        ).filter(Product.id == product_id).first()
+        p = (
+            self.db.query(Product)
+            .options(joinedload(Product.category))
+            .filter(Product.id == product_id)
+            .first()
+        )
         if not p:
             raise HTTPException(status_code=404, detail="Product not found")
         return self._enrich(p)
 
     def get_by_barcode(self, barcode: str) -> ProductResponse:
-        p = self.db.query(Product).options(
-            joinedload(Product.category), joinedload(Product.subcategory)
-        ).filter(Product.barcode == barcode).first()
+        p = (
+            self.db.query(Product)
+            .options(joinedload(Product.category))
+            .filter(Product.barcode == barcode)
+            .first()
+        )
         if not p:
             raise HTTPException(status_code=404, detail="Product not found")
         return self._enrich(p)
@@ -81,19 +89,33 @@ class ProductService:
         self.db.commit()
 
     def get_low_stock(self) -> List[ProductResponse]:
-        items = self.db.query(Product).options(
-            joinedload(Product.category)
-        ).filter(Product.current_stock <= Product.minimum_stock, Product.is_active == True).all()
+        items = (
+            self.db.query(Product)
+            .options(joinedload(Product.category))
+            .filter(
+                Product.current_stock <= Product.minimum_stock,
+                Product.is_active == True,
+            )
+            .all()
+        )
         return [self._enrich(p) for p in items]
 
     def export_csv(self) -> str:
         products = self.db.query(Product).all()
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["ID", "Name", "SKU", "Barcode", "Purchase Price", "Selling Price",
-                         "GST%", "Unit", "Current Stock", "Min Stock", "Brand", "Status"])
+        writer.writerow([
+            "ID", "Name", "SKU", "Barcode", "Category",
+            "Purchase Price", "Selling Price", "GST%",
+            "Unit", "Current Stock", "Min Stock", "Brand", "Status",
+        ])
         for p in products:
-            writer.writerow([p.id, p.name, p.sku, p.barcode, p.purchase_price, p.selling_price,
-                             p.gst_percent, p.unit, p.current_stock, p.minimum_stock, p.brand,
-                             "Active" if p.is_active else "Inactive"])
+            writer.writerow([
+                p.id, p.name, p.sku, p.barcode,
+                p.category.name if p.category else "",
+                p.purchase_price, p.selling_price,
+                p.gst_percent, p.unit, p.current_stock,
+                p.minimum_stock, p.brand,
+                "Active" if p.is_active else "Inactive",
+            ])
         return output.getvalue()
