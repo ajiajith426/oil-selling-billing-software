@@ -63,10 +63,11 @@ export default function SaleDetailPage() {
     doc.text(`Status: ${sale.status.toUpperCase()}`, 14, 62)
 
     // Items table
-    const tableHeaders = ['#', 'Product', 'Qty', 'Unit Price', 'GST Amount', 'Total']
+    const tableHeaders = ['#', 'Product', 'Unit', 'Qty', 'Unit Price', 'GST Amount', 'Total']
     const tableBody = sale.items.map((item, index) => [
       (index + 1).toString(),
       item.product_name || '',
+      item.unit || '',
       item.quantity.toString(),
       `Rs. ${item.unit_price.toFixed(2)}`,
       `Rs. ${item.gst_amount.toFixed(2)}`,
@@ -186,6 +187,7 @@ export default function SaleDetailPage() {
               <tr>
                 <th>#</th>
                 <th>Product</th>
+                <th>Unit</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>GST Amount</th>
@@ -197,6 +199,7 @@ export default function SaleDetailPage() {
                 <tr key={item.id}>
                   <td className="text-gray-400">{i + 1}</td>
                   <td className="font-medium dark:text-white">{item.product_name}</td>
+                  <td><span className="badge-blue text-xs">{item.unit || '—'}</span></td>
                   <td>{item.quantity}</td>
                   <td>{fmtCurrency(item.unit_price)}</td>
                   <td>{fmtCurrency(item.gst_amount)}</td>

@@ -14,6 +14,7 @@ import { Combobox } from '@/components/ui/Combobox'
 interface CartItem {
   product: Product
   quantity: number
+  unit: string
   unit_price: number
   gst_percent: number
   discount_percent: number
@@ -68,6 +69,7 @@ export default function BillingPage() {
       setCart([...cart, {
         product,
         quantity: 1,
+        unit: product.unit || 'Kg',
         unit_price: Number(product.selling_price),
         gst_percent: Number(product.gst_percent),
         discount_percent: 0,
@@ -238,7 +240,7 @@ export default function BillingPage() {
             <div className="table-container border-0 rounded-none">
               <table>
                 <thead>
-                  <tr><th>Product</th><th>Qty</th><th>Price</th><th>GST%</th><th>Disc%</th><th>Total</th><th></th></tr>
+                  <tr><th>Product</th><th>Unit</th><th>Qty</th><th>Price</th><th>GST%</th><th>Disc%</th><th>Total</th><th></th></tr>
                 </thead>
                 <tbody>
                   {cart.map((item, idx) => {
@@ -249,7 +251,14 @@ export default function BillingPage() {
                       <tr key={idx}>
                         <td>
                           <p className="font-medium dark:text-white text-sm">{item.product.name}</p>
-                          <p className="text-xs text-gray-400">{item.product.unit}</p>
+                        </td>
+                        <td>
+                          <Combobox
+                            options={['Bag', 'Box', 'Kg', 'P', 'Pkt'].map((u) => ({ value: u, label: u }))}
+                            value={item.unit}
+                            onChange={(val) => setCart(cart.map((c, i) => i === idx ? { ...c, unit: val } : c))}
+                            className="w-20 py-1.5 text-xs"
+                          />
                         </td>
                         <td>
                           <div className="flex items-center gap-1">
@@ -286,7 +295,7 @@ export default function BillingPage() {
                     )
                   })}
                   {!cart.length && (
-                    <tr><td colSpan={7} className="text-center py-16 text-gray-400">
+                    <tr><td colSpan={8} className="text-center py-16 text-gray-400">
                       <div className="flex flex-col items-center gap-2">
                         <Search size={32} className="opacity-30" />
                         <p>Search and add products to cart</p>

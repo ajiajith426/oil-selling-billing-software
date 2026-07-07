@@ -38,6 +38,7 @@ export interface SubCategory {
 export interface Product {
   id: number
   name: string
+  tamil_name?: string
   category_id?: number
   subcategory_id?: number
   category_name?: string
@@ -93,6 +94,7 @@ export interface PurchaseItem {
   id: number
   product_id: number
   product_name?: string
+  unit?: string
   quantity: number
   unit_price: number
   gst_percent: number
@@ -125,6 +127,7 @@ export interface SaleItem {
   id: number
   product_id: number
   product_name?: string
+  unit?: string
   quantity: number
   unit_price: number
   gst_percent: number

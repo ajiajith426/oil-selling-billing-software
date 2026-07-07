@@ -1,0 +1,74 @@
+// Tamil Translation Utility
+// Static dictionary for oil-business terms + Google Translate fallback
+
+const TAMIL_DICT: Record<string, string> = {
+  "oil": "\u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "oils": "\u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd\u0b95\u0bb3\u0bcd",
+  "coconut oil": "\u0ba4\u0bc7\u0b99\u0bcd\u0b95\u0bbe\u0baf\u0bcd \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "groundnut oil": "\u0ba8\u0bbf\u0bb2\u0b95\u0bcd\u0b95\u0b9f\u0bb2\u0bc8 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "peanut oil": "\u0ba8\u0bbf\u0bb2\u0b95\u0bcd\u0b95\u0b9f\u0bb2\u0bc8 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "sesame oil": "\u0ba8\u0bb2\u0bcd\u0bb2\u0bc6\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "gingelly oil": "\u0ba8\u0bb2\u0bcd\u0bb2\u0bc6\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "sunflower oil": "\u0b9a\u0bc2\u0bb0\u0bbf\u0baf\u0b95\u0bbe\u0ba8\u0bcd\u0ba4\u0bbf \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "palm oil": "\u0baa\u0bbe\u0bae\u0bbe\u0baf\u0bbf\u0bb2\u0bcd",
+  "mustard oil": "\u0b95\u0b9f\u0bc1\u0b95\u0bc1 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "rice bran oil": "\u0b85\u0bb0\u0bbf\u0b9a\u0bbf \u0ba4\u0bb5\u0bbf\u0b9f\u0bc1 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "soybean oil": "\u0b9a\u0bcb\u0baf\u0bbe \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "corn oil": "\u0b9a\u0bcb\u0bb3 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "olive oil": "\u0b86\u0bb2\u0bbf\u0bb5\u0bcd \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "castor oil": "\u0b86\u0bae\u0ba3\u0b95\u0bcd\u0b95\u0bc1 \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "neem oil": "\u0bb5\u0bc7\u0baa\u0bcd\u0baa \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "engine oil": "\u0b8e\u0ba9\u0bcd\u0b9c\u0bbf\u0ba9\u0bcd \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "refined oil": "\u0b9a\u0bc1\u0ba4\u0bcd\u0ba4\u0bbf\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f \u0b8e\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "ghee": "\u0ba8\u0bc6\u0baf\u0bcd",
+  "butter": "\u0bb5\u0bc6\u0ba3\u0bcd\u0ba3\u0bc6\u0baf\u0bcd",
+  "rice": "\u0b85\u0bb0\u0bbf\u0b9a\u0bbf",
+  "wheat": "\u0b95\u0bcb\u0ba4\u0bc1\u0bae\u0bc8",
+  "flour": "\u0bae\u0bbe\u0bb5\u0bc1",
+  "salt": "\u0b89\u0baa\u0bcd\u0baa\u0bc1",
+  "sugar": "\u0b9a\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0bb0\u0bc8",
+  "dal": "\u0baa\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0bc1",
+  "dhal": "\u0baa\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0bc1",
+  "turmeric": "\u0bae\u0b9e\u0bcd\u0b9a\u0bb3\u0bcd",
+  "chilli": "\u0bae\u0bbf\u0bb3\u0b95\u0bbe\u0baf\u0bcd",
+  "pepper": "\u0bae\u0bbf\u0bb3\u0b95\u0bc1",
+  "cumin": "\u0b9a\u0bc0\u0bb0\u0b95\u0bae\u0bcd",
+  "coriander": "\u0bae\u0bb2\u0bcd\u0bb2\u0bbf",
+  "garlic": "\u0baa\u0bc2\u0ba3\u0bcd\u0b9f\u0bc1",
+  "ginger": "\u0b87\u0b9e\u0bcd\u0b9a\u0bbf",
+  "onion": "\u0bb5\u0bc6\u0b99\u0bcd\u0b95\u0bbe\u0baf\u0bae\u0bcd",
+  "tomato": "\u0ba4\u0b95\u0bcd\u0b95\u0bbe\u0bb3\u0bbf",
+  "potato": "\u0b89\u0bb0\u0bc1\u0bb3\u0bc8\u0b95\u0bcd\u0b95\u0bbf\u0bb4\u0b99\u0bcd\u0b95\u0bc1",
+  "milk": "\u0baa\u0bbe\u0bb2\u0bcd",
+  "curd": "\u0ba4\u0baf\u0bbf\u0bb0\u0bcd",
+  "honey": "\u0ba4\u0bc7\u0ba9\u0bcd",
+  "soap": "\u0b9a\u0bcb\u0baa\u0bcd\u0baa\u0bc1",
+  "bag": "\u0baa\u0bc8",
+  "box": "\u0baa\u0bc6\u0b9f\u0bcd\u0b9f\u0bbf",
+  "bottle": "\u0baa\u0bbe\u0b9f\u0bcd\u0b9f\u0bbf\u0bb2\u0bcd",
+  "packet": "\u0baa\u0bbe\u0b95\u0bcd\u0b95\u0bc6\u0b9f\u0bcd",
+  "can": "\u0b95\u0bc7\u0ba9\u0bcd",
+  "tin": "\u0b9f\u0bbf\u0ba9\u0bcd",
+  "drum": "\u0b9f\u0bbf\u0bb0\u0bae\u0bcd",
+  "litre": "\u0bb2\u0bbf\u0b9f\u0bcd\u0b9f\u0bb0\u0bcd",
+  "kg": "\u0b95\u0bbf\u0bb2\u0bcb",
+  "gram": "\u0b95\u0bbf\u0bb0\u0bbe\u0bae\u0bcd",
+}
+
+export async function translateToTamil(text: string): Promise<string> {
+  if (!text.trim()) return ''
+  const lower = text.trim().toLowerCase()
+  if (TAMIL_DICT[lower]) return TAMIL_DICT[lower]
+  const words = lower.split(/\s+/)
+  const translated = words.map((w) => TAMIL_DICT[w] || null)
+  if (translated.every(Boolean)) return (translated as string[]).join(' ')
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ta&dt=t&q=${encodeURIComponent(text)}`
+    const res = await fetch(url)
+    const data = await res.json()
+    const result: string = data?.[0]?.map((d: any[]) => d[0]).join('') || ''
+    return result
+  } catch {
+    return ''
+  }
+}

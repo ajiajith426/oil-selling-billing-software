@@ -45,6 +45,7 @@ const InvoicePrint = forwardRef<HTMLDivElement, Props>(({ sale }, ref) => {
           <tr style={{ background: '#f3f4f6' }}>
             <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'left' }}>#</th>
             <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'left' }}>Product</th>
+            <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'center' }}>Unit</th>
             <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>Qty</th>
             <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>Unit Price</th>
             <th style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>GST</th>
@@ -57,6 +58,7 @@ const InvoicePrint = forwardRef<HTMLDivElement, Props>(({ sale }, ref) => {
             <tr key={item.id}>
               <td style={{ border: '1px solid #d1d5db', padding: '8px' }}>{i + 1}</td>
               <td style={{ border: '1px solid #d1d5db', padding: '8px' }}>{item.product_name}</td>
+              <td style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'center', fontWeight: 'bold' }}>{item.unit || '—'}</td>
               <td style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
               <td style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>{fmtCurrency(item.unit_price)}</td>
               <td style={{ border: '1px solid #d1d5db', padding: '8px', textAlign: 'right' }}>{fmtCurrency(item.gst_amount)}</td>

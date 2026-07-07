@@ -14,6 +14,7 @@ import { fmtCurrency } from '@/utils/format'
 interface CartItem {
   product: Product
   quantity: number
+  unit: string
   unit_price: number
   gst_percent: number
   discount_percent: number
@@ -55,6 +56,7 @@ export default function NewPurchasePage() {
       setCart([...cart, {
         product,
         quantity: 1,
+        unit: product.unit || 'Kg',
         unit_price: Number(product.purchase_price),
         gst_percent: Number(product.gst_percent),
         discount_percent: 0,
@@ -151,7 +153,7 @@ export default function NewPurchasePage() {
                 <table>
                   <thead>
                     <tr>
-                      <th>Product</th><th>Qty</th><th>Unit Price</th><th>GST%</th><th>Disc%</th><th>Total</th><th></th>
+                      <th>Product</th><th>Unit</th><th>Qty</th><th>Unit Price</th><th>GST%</th><th>Disc%</th><th>Total</th><th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -164,7 +166,14 @@ export default function NewPurchasePage() {
                         <tr key={idx}>
                           <td>
                             <p className="font-medium dark:text-white">{item.product.name}</p>
-                            <p className="text-xs text-gray-400">{item.product.unit}</p>
+                          </td>
+                          <td>
+                            <Combobox
+                              options={['Bag', 'Box', 'Kg', 'P', 'Pkt'].map((u) => ({ value: u, label: u }))}
+                              value={item.unit}
+                              onChange={(val) => setCart(cart.map((c, i) => i === idx ? { ...c, unit: val } : c))}
+                              className="w-20 py-1.5 text-xs"
+                            />
                           </td>
                           <td>
                             <input type="number" min="0.01" step="0.01" className="input w-20"
@@ -196,7 +205,7 @@ export default function NewPurchasePage() {
                       )
                     })}
                     {!cart.length && (
-                      <tr><td colSpan={7} className="text-center py-12 text-gray-400">No products added</td></tr>
+                      <tr><td colSpan={8} className="text-center py-12 text-gray-400">No products added</td></tr>
                     )}
                   </tbody>
                 </table>

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller } from 'react-hook-form'
-import { Plus, Pencil, Trash2, Search, Download, AlertTriangle } from 'lucide-react'
+import { useForm, Controller, useWatch } from 'react-hook-form'
+import { Plus, Pencil, Trash2, Search, Download, AlertTriangle, Languages } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Combobox } from '@/components/ui/Combobox'
 import { productService } from '@/services/product.service'
@@ -12,7 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Pagination from '@/components/ui/Pagination'
 import { TableSkeleton } from '@/components/ui/LoadingSkeleton'
 import { useDebounce } from '@/hooks/useDebounce'
-import { fmtCurrency, fmtDate } from '@/utils/format'
+import { fmtCurrency } from '@/utils/format'
+import { translateToTamil } from '@/utils/tamilTranslate'
 
 const PAGE_SIZE = 15
 
@@ -24,6 +25,9 @@ export default function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [editing, setEditing] = useState<Product | null>(null)
+  const [tamilName, setTamilName] = useState('')
+  const [translating, setTranslating] = useState(false)
+  const translateTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', page, debouncedSearch],
@@ -36,9 +40,29 @@ export default function ProductsPage() {
   })
   const categories = categoriesData?.items ?? []
 
-  const { control, register, handleSubmit, reset, formState: { errors } } = useForm<Partial<Product>>()
+  const { control, register, handleSubmit, reset, setValue, formState: { errors } } = useForm<Partial<Product>>()
 
+  const watchedName = useWatch({ control, name: 'name', defaultValue: '' })
 
+  // Auto-translate product name to Tamil with debounce
+  useEffect(() => {
+    if (translateTimer.current) clearTimeout(translateTimer.current)
+    if (!watchedName?.trim()) {
+      setTamilName('')
+      return
+    }
+    translateTimer.current = setTimeout(async () => {
+      setTranslating(true)
+      try {
+        const result = await translateToTamil(watchedName)
+        setTamilName(result)
+        setValue('tamil_name', result)
+      } finally {
+        setTranslating(false)
+      }
+    }, 600)
+    return () => { if (translateTimer.current) clearTimeout(translateTimer.current) }
+  }, [watchedName])
 
   const upsert = useMutation({
     mutationFn: (d: Partial<Product>) =>
@@ -61,11 +85,17 @@ export default function ProductsPage() {
 
   const openCreate = () => {
     setEditing(null)
-    reset({ name: '', unit: 'Pcs', gst_percent: 0, purchase_price: 0, selling_price: 0, minimum_stock: 0, current_stock: 0, is_active: true })
+    setTamilName('')
+    reset({ name: '', tamil_name: '', gst_percent: 0, purchase_price: 0, selling_price: 0, minimum_stock: 0, current_stock: 0, is_active: true })
     setModalOpen(true)
   }
-  const openEdit = (p: Product) => { setEditing(p); reset(p); setModalOpen(true) }
-  const closeModal = () => { setModalOpen(false); setEditing(null); reset() }
+  const openEdit = (p: Product) => {
+    setEditing(p)
+    setTamilName(p.tamil_name || '')
+    reset(p)
+    setModalOpen(true)
+  }
+  const closeModal = () => { setModalOpen(false); setEditing(null); setTamilName(''); reset() }
 
   return (
     <div className="space-y-4">
@@ -85,7 +115,7 @@ export default function ProductsPage() {
       <div className="card p-4">
         <div className="relative max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input className="input pl-9" placeholder="Search by name, SKU, barcode…" value={search}
+          <input className="input pl-9" placeholder="Search by name, SKU, barcode..." value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
         </div>
       </div>
@@ -96,7 +126,7 @@ export default function ProductsPage() {
             <thead>
               <tr>
                 <th>#</th><th>Name</th><th>SKU</th><th>Category</th>
-                <th>Purchase Price</th><th>Selling Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+                <th>Unit</th><th>Purchase Price</th><th>Selling Price</th><th>Stock</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -105,10 +135,12 @@ export default function ProductsPage() {
                   <td className="text-gray-400">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td>
                     <div className="font-medium dark:text-white">{p.name}</div>
+                    {p.tamil_name && <div className="text-xs text-orange-500 font-medium">{p.tamil_name}</div>}
                     {p.brand && <div className="text-xs text-gray-400">{p.brand}</div>}
                   </td>
-                  <td className="font-mono text-xs text-gray-500">{p.sku || '—'}</td>
-                  <td><span className="badge-blue">{p.category_name || '—'}</span></td>
+                  <td className="font-mono text-xs text-gray-500">{p.sku || '-'}</td>
+                  <td><span className="badge-blue">{p.category_name || '-'}</span></td>
+                  <td><span className="badge-blue text-xs">{p.unit}</span></td>
                   <td>{fmtCurrency(p.purchase_price)}</td>
                   <td className="font-semibold">{fmtCurrency(p.selling_price)}</td>
                   <td>
@@ -131,7 +163,7 @@ export default function ProductsPage() {
                 </tr>
               ))}
               {!isLoading && !data?.items.length && (
-                <tr><td colSpan={9} className="text-center py-12 text-gray-400">No products found</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-gray-400">No products found</td></tr>
               )}
             </tbody>
           </table>
@@ -142,11 +174,45 @@ export default function ProductsPage() {
       <Modal open={modalOpen} onClose={closeModal} title={editing ? 'Edit Product' : 'Add Product'} size="lg">
         <form onSubmit={handleSubmit((d) => upsert.mutate(d))} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
+
+            {/* Product Name with Tamil auto-translate */}
             <div className="col-span-2">
               <label className="label">Product Name *</label>
-              <input className="input" placeholder="Product name" {...register('name', { required: 'Name is required' })} />
-              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+              <div className="flex gap-2 items-start">
+                <div className="flex-1">
+                  <input
+                    className="input"
+                    placeholder="Product name (English)"
+                    {...register('name', { required: 'Name is required' })}
+                  />
+                  {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+                </div>
+                <div className="flex items-center px-1 pt-2.5 shrink-0">
+                  <Languages size={16} className={translating ? 'animate-pulse text-blue-500' : 'text-gray-400'} />
+                </div>
+                <div className="flex-1">
+                  <div className="relative">
+                    <input
+                      className="input pr-24"
+                      placeholder="????? ?????"
+                      value={tamilName}
+                      {...register('tamil_name')}
+                      onChange={(e) => {
+                        setTamilName(e.target.value)
+                        setValue('tamil_name', e.target.value)
+                      }}
+                    />
+                    {translating && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-blue-500 font-medium animate-pulse whitespace-nowrap">
+                        ????????????????...
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">????? ??????????????????? � ???????????</p>
+                </div>
+              </div>
             </div>
+
             <div>
               <label className="label">Category</label>
               <Controller
@@ -176,37 +242,17 @@ export default function ProductsPage() {
               <input className="input" placeholder="Barcode" {...register('barcode')} />
             </div>
             <div>
-              <label className="label">Purchase Price (₹)</label>
+              <label className="label">Purchase Price (Rs.)</label>
               <input type="number" step="0.01" className="input" {...register('purchase_price', { valueAsNumber: true })} />
             </div>
             <div>
-              <label className="label">Selling Price (₹)</label>
+              <label className="label">Selling Price (Rs.)</label>
               <input type="number" step="0.01" className="input" {...register('selling_price', { valueAsNumber: true })} />
             </div>
             <div>
               <label className="label">GST (%)</label>
               <input type="number" step="0.01" className="input" {...register('gst_percent', { valueAsNumber: true })} />
             </div>
-            <div>
-              <label className="label">Unit</label>
-              <Controller
-                control={control}
-                name="unit"
-                render={({ field }) => (
-                  <Combobox
-                    placeholder="Select unit"
-                    searchPlaceholder="Search unit..."
-                    options={['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => ({
-                      value: u,
-                      label: u
-                    }))}
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
-            </div>
-
             <div>
               <label className="label">Minimum Stock</label>
               <input type="number" step="0.01" className="input" {...register('minimum_stock', { valueAsNumber: true })} />
@@ -227,7 +273,7 @@ export default function ProductsPage() {
           <div className="flex gap-3 justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
             <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={upsert.isPending}>
-              {upsert.isPending ? 'Saving…' : editing ? 'Update' : 'Create'}
+              {upsert.isPending ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
