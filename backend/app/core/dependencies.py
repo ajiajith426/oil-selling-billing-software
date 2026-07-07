@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.core.security import decode_token
-from app.models.user import User
+from app.models.user import User, UserRole
 
 security = HTTPBearer()
 
@@ -19,7 +19,7 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
-    user_id: int = payload.get("sub")
+    user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     user = db.query(User).filter(User.id == int(user_id)).first()
@@ -29,10 +29,20 @@ def get_current_user(
 
 
 def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
-    current_user.role = 'admin'
-    if current_user.role != "admin":
+    """Allows admin OR super_admin."""
+    if current_user.role not in (UserRole.admin, UserRole.super_admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
+        )
+    return current_user
+
+
+def get_current_super_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Allows only super_admin."""
+    if current_user.role != UserRole.super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
         )
     return current_user

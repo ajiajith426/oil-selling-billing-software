@@ -45,3 +45,16 @@ class LoginRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+# ── Super Admin bootstrap ─────────────────────────────────────────────────
+
+class SuperAdminCreateRequest(BaseModel):
+    """
+    One-time super admin creation payload.
+    Requires the SUPER_ADMIN_SECRET_KEY from server config — no JWT needed.
+    """
+    secret_key: str          # must match SUPER_ADMIN_SECRET_KEY in .env
+    name: str
+    email: EmailStr
+    password: str

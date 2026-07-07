@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Super Admin bootstrap — set this in .env, keep it secret
+    SUPER_ADMIN_SECRET_KEY: str = "change-this-super-admin-secret"
+
     # CORS
     ALLOWED_ORIGINS: list = [
         "http://localhost:5173",
