@@ -189,22 +189,11 @@ export default function ProductsPage() {
             </div>
             <div>
               <label className="label">Unit</label>
-              <Controller
-                control={control}
-                name="unit"
-                render={({ field }) => (
-                  <Combobox
-                    placeholder="Select unit"
-                    searchPlaceholder="Search unit..."
-                    options={['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => ({
-                      value: u,
-                      label: u
-                    }))}
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
+              <select className="input" {...register('unit')}>
+                {['Kg', 'Pcs', 'Litre', 'Box', 'Bag', 'Dozen', 'Gram', 'Bundle', 'Packet'].map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
             </div>
 
             <div>

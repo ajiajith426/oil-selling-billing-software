@@ -1,7 +1,7 @@
-import { Category, SubCategory, Product, Customer, Supplier, Sale, Purchase, StockMovement, Settings, User, Vehicle, VehicleExpense, Staff, SalaryPayment } from '@/types';
+import { Category, SubCategory, Product, Customer, Supplier, Sale, Purchase, StockMovement, Settings, User } from '@/types';
 
 // ── Seed version: bump this to wipe localStorage and reload fresh seed data ──
-const SEED_VERSION = 'v4-vehicle-driver';
+const SEED_VERSION = 'v2-grocery';
 
 const storedVersion = localStorage.getItem('mock_seed_version');
 if (storedVersion !== SEED_VERSION) {
@@ -188,7 +188,7 @@ const initialSales: Sale[] = [
     discount_amount: 300,
     tax_amount: 310,
     grand_total: 6500,
-    paid_amount: 4500,
+    paid_amount: 6500,
     change_amount: 0,
     payment_method: 'cash',
     cash_amount: 6500,
@@ -310,30 +310,6 @@ const initialStockMovements: StockMovement[] = [
   { id: 10, product_id: 3, product_name: 'Gemini Sunflower Oil 1 L',      movement_type: 'sale',     quantity: 5,  stock_before: 205, stock_after: 200, reference_id: 4, reference_type: 'sale',    notes: 'Sold against MJA-2026-0004',   created_at: new Date().toISOString() },
 ];
 
-const initialVehicles: Vehicle[] = [
-  { id: 1, vehicle_no: 'TN-59-AB-1234', model: 'Tata Ace', type: 'Mini Truck', driver_id: 1, driver_name: 'Rajesh Kumar', is_active: true, created_at: new Date().toISOString() },
-  { id: 2, vehicle_no: 'TN-58-Q-9876', model: 'Mahindra Bolero Pik-Up', type: 'Pickup Van', driver_id: 2, driver_name: 'Suresh Moorthy', is_active: true, created_at: new Date().toISOString() }
-];
-
-const initialVehicleExpenses: VehicleExpense[] = [
-  { id: 1, vehicle_id: 1, vehicle_no: 'TN-59-AB-1234', expense_type: 'fuel', amount: 1500, expense_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), liters: 15, bill_no: 'F-8812', notes: 'Diesel refill', created_at: new Date().toISOString() },
-  { id: 2, vehicle_id: 1, vehicle_no: 'TN-59-AB-1234', expense_type: 'maintenance', amount: 3500, expense_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), bill_no: 'M-1022', notes: 'Engine oil change and general service', created_at: new Date().toISOString() },
-  { id: 3, vehicle_id: 2, vehicle_no: 'TN-58-Q-9876', expense_type: 'fuel', amount: 2000, expense_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), liters: 20, bill_no: 'F-9021', notes: 'Diesel refill', created_at: new Date().toISOString() }
-];
-
-const initialStaff: Staff[] = [
-  { id: 1, name: 'Rajesh Kumar', mobile: '9876501234', role: 'Driver', salary_type: 'daily', base_salary: 600, is_active: true, created_at: new Date().toISOString() },
-  { id: 2, name: 'Suresh Moorthy', mobile: '9765432109', role: 'Helper / Loader', salary_type: 'daily', base_salary: 450, is_active: true, created_at: new Date().toISOString() },
-  { id: 3, name: 'Priyanka Sen', mobile: '9543210987', role: 'Billing Staff', salary_type: 'monthly', base_salary: 15000, is_active: true, created_at: new Date().toISOString() }
-];
-
-const initialSalaries: SalaryPayment[] = [
-  { id: 1, staff_id: 1, staff_name: 'Rajesh Kumar', payment_type: 'daily', payment_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), amount: 600, payment_period: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], notes: 'Daily wage paid', created_at: new Date().toISOString() },
-  { id: 2, staff_id: 1, staff_name: 'Rajesh Kumar', payment_type: 'daily', payment_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), amount: 600, payment_period: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], notes: 'Daily wage paid', created_at: new Date().toISOString() },
-  { id: 3, staff_id: 2, staff_name: 'Suresh Moorthy', payment_type: 'daily', payment_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), amount: 450, payment_period: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], notes: 'Daily wage paid', created_at: new Date().toISOString() },
-  { id: 4, staff_id: 3, staff_name: 'Priyanka Sen', payment_type: 'monthly', payment_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), amount: 15000, payment_period: 'June 2026', notes: 'Monthly salary for June', created_at: new Date().toISOString() }
-];
-
 // Stateful Mock Store Database object
 export const mockDB = {
   getCategories: () => getLocal('categories', initialCategories),
@@ -362,18 +338,6 @@ export const mockDB = {
 
   getSettings: () => getLocal('settings', initialSettings),
   setSettings: (val: Settings) => setLocal('settings', val),
-
-  getVehicles: () => getLocal('vehicles', initialVehicles),
-  setVehicles: (val: Vehicle[]) => setLocal('vehicles', val),
-
-  getVehicleExpenses: () => getLocal('vehicleExpenses', initialVehicleExpenses),
-  setVehicleExpenses: (val: VehicleExpense[]) => setLocal('vehicleExpenses', val),
-
-  getStaff: () => getLocal('staff', initialStaff),
-  setStaff: (val: Staff[]) => setLocal('staff', val),
-
-  getSalaries: () => getLocal('salaries', initialSalaries),
-  setSalaries: (val: SalaryPayment[]) => setLocal('salaries', val),
 
   // ── Categories CRUD ──
   createCategory: (data: Partial<Category>) => {
@@ -637,7 +601,7 @@ export const mockDB = {
       const pName = product ? product.name : 'Unknown Product';
       const qty = Number(item.quantity);
       const price = Number(item.unit_price);
-      const gstPct = Number(item.gst_percent !== undefined ? item.gst_percent : (product?.gst_percent || 0));
+      const gstPct = Number(item.gst_percent || product?.gst_percent || 0);
       const discPct = Number(item.discount_percent || 0);
 
       const baseAmount = qty * price;
@@ -1023,353 +987,6 @@ export const mockDB = {
       cost_of_goods_sold,
       gross_profit,
       gross_margin_percent
-    };
-  },
-
-  getReportsCreditors: () => {
-    const suppliers = mockDB.getSuppliers();
-    const purchases = mockDB.getPurchases().filter(p => p.status !== 'cancelled');
-    
-    const creditorsMap: Record<number, {
-      supplier_id: number;
-      supplier_name: string;
-      mobile: string;
-      email: string;
-      total_purchases: number;
-      total_paid: number;
-      total_due: number;
-    }> = {};
-
-    suppliers.forEach(s => {
-      creditorsMap[s.id] = {
-        supplier_id: s.id,
-        supplier_name: s.name,
-        mobile: s.mobile || '-',
-        email: s.email || '-',
-        total_purchases: 0,
-        total_paid: 0,
-        total_due: 0
-      };
-    });
-
-    purchases.forEach(p => {
-      if (p.supplier_id && creditorsMap[p.supplier_id]) {
-        creditorsMap[p.supplier_id].total_purchases += p.grand_total;
-        creditorsMap[p.supplier_id].total_paid += p.paid_amount;
-        creditorsMap[p.supplier_id].total_due += p.due_amount;
-      }
-    });
-
-    const items = Object.values(creditorsMap);
-    const outstandingItems = items.filter(c => c.total_due > 0);
-    const total_outstanding = outstandingItems.reduce((acc, c) => acc + c.total_due, 0);
-
-    return {
-      total_creditors: outstandingItems.length,
-      total_outstanding,
-      all_items: items,
-      outstanding_items: outstandingItems
-    };
-  },
-
-  getReportsDebtors: () => {
-    const customers = mockDB.getCustomers();
-    const sales = mockDB.getSales().filter(s => s.status !== 'cancelled');
-
-    const debtorsMap: Record<number, {
-      customer_id: number;
-      customer_name: string;
-      mobile: string;
-      email: string;
-      total_sales: number;
-      total_paid: number;
-      total_due: number;
-    }> = {};
-
-    customers.forEach(c => {
-      debtorsMap[c.id] = {
-        customer_id: c.id,
-        customer_name: c.name,
-        mobile: c.mobile || '-',
-        email: c.email || '-',
-        total_sales: 0,
-        total_paid: 0,
-        total_due: 0
-      };
-    });
-
-    sales.forEach(s => {
-      if (s.customer_id && debtorsMap[s.customer_id]) {
-        debtorsMap[s.customer_id].total_sales += s.grand_total;
-        debtorsMap[s.customer_id].total_paid += s.paid_amount;
-        const due = s.grand_total - s.paid_amount;
-        debtorsMap[s.customer_id].total_due += due > 0 ? due : 0;
-      }
-    });
-
-    const items = Object.values(debtorsMap);
-    const outstandingItems = items.filter(d => d.total_due > 0);
-    const total_outstanding = outstandingItems.reduce((acc, d) => acc + d.total_due, 0);
-
-    return {
-      total_debtors: outstandingItems.length,
-      total_outstanding,
-      all_items: items,
-      outstanding_items: outstandingItems
-    };
-  },
-
-  // ── Vehicles CRUD ──
-  createVehicle: (data: Partial<Vehicle>) => {
-    const list = mockDB.getVehicles();
-    const nextId = list.length > 0 ? Math.max(...list.map(v => v.id)) + 1 : 1;
-    const staff = data.driver_id ? mockDB.getStaff().find(s => s.id === Number(data.driver_id)) : null;
-    const newItem: Vehicle = {
-      id: nextId,
-      vehicle_no: data.vehicle_no || '',
-      model: data.model || '',
-      type: data.type || '',
-      driver_id: data.driver_id ? Number(data.driver_id) : undefined,
-      driver_name: staff ? staff.name : undefined,
-      is_active: data.is_active !== false,
-      created_at: new Date().toISOString()
-    };
-    list.unshift(newItem);
-    mockDB.setVehicles(list);
-    return newItem;
-  },
-  updateVehicle: (id: number, data: Partial<Vehicle>) => {
-    const list = mockDB.getVehicles();
-    const idx = list.findIndex(v => v.id === id);
-    if (idx === -1) throw new Error('Vehicle not found');
-    const staff = data.driver_id ? mockDB.getStaff().find(s => s.id === Number(data.driver_id)) : null;
-    list[idx] = {
-      ...list[idx],
-      ...data,
-      driver_id: data.driver_id ? Number(data.driver_id) : list[idx].driver_id,
-      driver_name: staff ? staff.name : (data.driver_id === null ? undefined : list[idx].driver_name)
-    };
-    mockDB.setVehicles(list);
-    return list[idx];
-  },
-  deleteVehicle: (id: number) => {
-    const list = mockDB.getVehicles();
-    const filtered = list.filter(v => v.id !== id);
-    mockDB.setVehicles(filtered);
-    return { success: true };
-  },
-
-  // ── Vehicle Expenses CRUD ──
-  createVehicleExpense: (data: Partial<VehicleExpense>) => {
-    const list = mockDB.getVehicleExpenses();
-    const vehicles = mockDB.getVehicles();
-    const vehicle = vehicles.find(v => v.id === Number(data.vehicle_id));
-    const nextId = list.length > 0 ? Math.max(...list.map(e => e.id)) + 1 : 1;
-    const newItem: VehicleExpense = {
-      id: nextId,
-      vehicle_id: Number(data.vehicle_id) || 0,
-      vehicle_no: vehicle ? vehicle.vehicle_no : 'Unknown',
-      expense_type: data.expense_type || 'other',
-      amount: Number(data.amount) || 0,
-      expense_date: data.expense_date || new Date().toISOString(),
-      liters: data.liters ? Number(data.liters) : undefined,
-      bill_no: data.bill_no || '',
-      notes: data.notes || '',
-      created_at: new Date().toISOString()
-    };
-    list.unshift(newItem);
-    mockDB.setVehicleExpenses(list);
-    return newItem;
-  },
-  updateVehicleExpense: (id: number, data: Partial<VehicleExpense>) => {
-    const list = mockDB.getVehicleExpenses();
-    const idx = list.findIndex(e => e.id === id);
-    if (idx === -1) throw new Error('Vehicle expense not found');
-    const vehicles = mockDB.getVehicles();
-    const vehicle = data.vehicle_id ? vehicles.find(v => v.id === Number(data.vehicle_id)) : null;
-    list[idx] = {
-      ...list[idx],
-      ...data,
-      vehicle_id: data.vehicle_id ? Number(data.vehicle_id) : list[idx].vehicle_id,
-      vehicle_no: vehicle ? vehicle.vehicle_no : list[idx].vehicle_no,
-      amount: data.amount !== undefined ? Number(data.amount) : list[idx].amount,
-      liters: data.liters !== undefined ? Number(data.liters) : list[idx].liters
-    };
-    mockDB.setVehicleExpenses(list);
-    return list[idx];
-  },
-  deleteVehicleExpense: (id: number) => {
-    const list = mockDB.getVehicleExpenses();
-    const filtered = list.filter(e => e.id !== id);
-    mockDB.setVehicleExpenses(filtered);
-    return { success: true };
-  },
-
-  // ── Staff CRUD ──
-  createStaff: (data: Partial<Staff>) => {
-    const list = mockDB.getStaff();
-    const nextId = list.length > 0 ? Math.max(...list.map(s => s.id)) + 1 : 1;
-    const newItem: Staff = {
-      id: nextId,
-      name: data.name || '',
-      mobile: data.mobile || '',
-      role: data.role || '',
-      salary_type: data.salary_type || 'daily',
-      base_salary: Number(data.base_salary) || 0,
-      is_active: data.is_active !== false,
-      created_at: new Date().toISOString()
-    };
-    list.unshift(newItem);
-    mockDB.setStaff(list);
-    return newItem;
-  },
-  updateStaff: (id: number, data: Partial<Staff>) => {
-    const list = mockDB.getStaff();
-    const idx = list.findIndex(s => s.id === id);
-    if (idx === -1) throw new Error('Staff not found');
-    list[idx] = { 
-      ...list[idx], 
-      ...data,
-      base_salary: data.base_salary !== undefined ? Number(data.base_salary) : list[idx].base_salary
-    };
-    mockDB.setStaff(list);
-    return list[idx];
-  },
-  deleteStaff: (id: number) => {
-    const list = mockDB.getStaff();
-    const filtered = list.filter(s => s.id !== id);
-    mockDB.setStaff(filtered);
-    return { success: true };
-  },
-
-  // ── Salary Payouts CRUD ──
-  createSalary: (data: Partial<SalaryPayment>) => {
-    const list = mockDB.getSalaries();
-    const staffList = mockDB.getStaff();
-    const staff = staffList.find(s => s.id === Number(data.staff_id));
-    const nextId = list.length > 0 ? Math.max(...list.map(s => s.id)) + 1 : 1;
-    const newItem: SalaryPayment = {
-      id: nextId,
-      staff_id: Number(data.staff_id) || 0,
-      staff_name: staff ? staff.name : 'Unknown Staff',
-      payment_type: data.payment_type || 'daily',
-      payment_date: data.payment_date || new Date().toISOString(),
-      amount: Number(data.amount) || 0,
-      payment_period: data.payment_period || '',
-      notes: data.notes || '',
-      created_at: new Date().toISOString()
-    };
-    list.unshift(newItem);
-    mockDB.setSalaries(list);
-    return newItem;
-  },
-  updateSalary: (id: number, data: Partial<SalaryPayment>) => {
-    const list = mockDB.getSalaries();
-    const idx = list.findIndex(s => s.id === id);
-    if (idx === -1) throw new Error('Salary payout record not found');
-    const staffList = mockDB.getStaff();
-    const staff = data.staff_id ? staffList.find(s => s.id === Number(data.staff_id)) : null;
-    list[idx] = {
-      ...list[idx],
-      ...data,
-      staff_id: data.staff_id ? Number(data.staff_id) : list[idx].staff_id,
-      staff_name: staff ? staff.name : list[idx].staff_name,
-      amount: data.amount !== undefined ? Number(data.amount) : list[idx].amount
-    };
-    mockDB.setSalaries(list);
-    return list[idx];
-  },
-  deleteSalary: (id: number) => {
-    const list = mockDB.getSalaries();
-    const filtered = list.filter(s => s.id !== id);
-    mockDB.setSalaries(filtered);
-    return { success: true };
-  },
-
-  // ── Expense & Salary Reports ──
-  getReportsVehicleExpenses: () => {
-    const expenses = mockDB.getVehicleExpenses();
-    let total_expenses = 0;
-    let total_fuel = 0;
-    let total_maintenance = 0;
-    let total_others = 0;
-
-    const vehicleWiseMap: Record<string, { vehicle_no: string; amount: number; fuel_amount: number; maint_amount: number; other_amount: number }> = {};
-
-    expenses.forEach(e => {
-      const amt = Number(e.amount) || 0;
-      total_expenses += amt;
-      if (e.expense_type === 'fuel') total_fuel += amt;
-      else if (e.expense_type === 'maintenance') total_maintenance += amt;
-      else total_others += amt;
-
-      const vNo = e.vehicle_no || 'Unknown Vehicle';
-      if (!vehicleWiseMap[vNo]) {
-        vehicleWiseMap[vNo] = { vehicle_no: vNo, amount: 0, fuel_amount: 0, maint_amount: 0, other_amount: 0 };
-      }
-      vehicleWiseMap[vNo].amount += amt;
-      if (e.expense_type === 'fuel') vehicleWiseMap[vNo].fuel_amount += amt;
-      else if (e.expense_type === 'maintenance') vehicleWiseMap[vNo].maint_amount += amt;
-      else vehicleWiseMap[vNo].other_amount += amt;
-    });
-
-    return {
-      total_expenses,
-      total_fuel,
-      total_maintenance,
-      total_others,
-      vehicle_wise: Object.values(vehicleWiseMap),
-      all_items: expenses
-    };
-  },
-
-  getReportsDailyWages: () => {
-    const salaries = mockDB.getSalaries().filter(s => s.payment_type === 'daily');
-    let total_daily_wages = 0;
-
-    const staffWiseMap: Record<number, { staff_id: number; staff_name: string; total_paid: number; payments_count: number }> = {};
-
-    salaries.forEach(s => {
-      const amt = Number(s.amount) || 0;
-      total_daily_wages += amt;
-
-      const sId = s.staff_id;
-      if (!staffWiseMap[sId]) {
-        staffWiseMap[sId] = { staff_id: sId, staff_name: s.staff_name, total_paid: 0, payments_count: 0 };
-      }
-      staffWiseMap[sId].total_paid += amt;
-      staffWiseMap[sId].payments_count += 1;
-    });
-
-    return {
-      total_daily_wages,
-      staff_wise: Object.values(staffWiseMap),
-      all_items: salaries
-    };
-  },
-
-  getReportsMonthlySalaries: () => {
-    const salaries = mockDB.getSalaries().filter(s => s.payment_type === 'monthly');
-    let total_monthly_salaries = 0;
-
-    const staffWiseMap: Record<number, { staff_id: number; staff_name: string; total_paid: number; payments_count: number }> = {};
-
-    salaries.forEach(s => {
-      const amt = Number(s.amount) || 0;
-      total_monthly_salaries += amt;
-
-      const sId = s.staff_id;
-      if (!staffWiseMap[sId]) {
-        staffWiseMap[sId] = { staff_id: sId, staff_name: s.staff_name, total_paid: 0, payments_count: 0 };
-      }
-      staffWiseMap[sId].total_paid += amt;
-      staffWiseMap[sId].payments_count += 1;
-    });
-
-    return {
-      total_monthly_salaries,
-      staff_wise: Object.values(staffWiseMap),
-      all_items: salaries
     };
   },
 
